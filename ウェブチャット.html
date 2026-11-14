@@ -1,0 +1,1146 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>ウェブチャット</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=JetBrains+Mono:wght@400&display=swap">
+<style>
+/* Layout: 72px rail | 288px sidebar | main | 320px panel. Mobile: single column + drawer + tab bar. All spacing in 8px steps. */
+:root{
+  --bg0:#111413;--bg1:#171a19;--bg2:#1d2120;--bg3:#262b2a;--bg4:#2f3534;
+  --line:#2f3534;--text:#e8edeb;--text2:#9ba7a3;--text3:#69756f;
+  --accent:#4cc09a;--on-accent:#0c1f18;--danger:#e0716a;
+  --shadow:0 8px 24px rgb(0 0 0/.28);
+  --scrim:rgb(0 0 0/.5);
+  color-scheme:dark;
+  --font:'Noto Sans JP',system-ui,-apple-system,'Hiragino Sans','Yu Gothic',sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+  --ease:cubic-bezier(.2,.8,.2,1);--spring:cubic-bezier(.34,1.56,.64,1);
+  --d1:120ms;--d2:200ms;--d3:320ms;--d4:480ms;
+  --r1:8px;--r2:16px;
+  --rail:72px;--side:288px;--panel:320px;
+}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){
+  --bg0:#e6e9e6;--bg1:#eef1ee;--bg2:#f7f9f6;--bg3:#ffffff;--bg4:#e3e7e3;
+  --line:#d7dcd7;--text:#19201d;--text2:#56625d;--text3:#8a948f;
+  --accent:#1c9a74;--on-accent:#ffffff;--danger:#c9453d;
+  --shadow:0 8px 24px rgb(20 30 25/.14);--scrim:rgb(20 30 25/.35);color-scheme:light}}
+:root[data-theme="light"]{
+  --bg0:#e6e9e6;--bg1:#eef1ee;--bg2:#f7f9f6;--bg3:#ffffff;--bg4:#e3e7e3;
+  --line:#d7dcd7;--text:#19201d;--text2:#56625d;--text3:#8a948f;
+  --accent:#1c9a74;--on-accent:#ffffff;--danger:#c9453d;
+  --shadow:0 8px 24px rgb(20 30 25/.14);--scrim:rgb(20 30 25/.35);color-scheme:light}
+:root[data-density="compact"]{--row:40px}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+body{background:var(--bg0);color:var(--text);font:400 14px/24px var(--font);-webkit-font-smoothing:antialiased;padding-left:0;padding-right:0}
+:root{--row:56px}
+button,input,textarea,select{font:inherit;color:inherit}
+button{background:none;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+input,textarea{background:var(--bg1);border:1px solid var(--line);border-radius:var(--r1);outline:0;width:100%}
+::placeholder{color:var(--text3)}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:8px}
+.scroll{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.ic{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ic.sm{width:16px;height:16px}.ic.lg{width:24px;height:24px}
+.hide{display:none!important}
+.row{display:flex;align-items:center;gap:8px}.col{display:flex;flex-direction:column}
+.grow{flex:1;min-width:0}.mute{color:var(--text2)}.faint{color:var(--text3)}
+.ell{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.xs{font-size:12px;line-height:16px}.h1{font-size:32px;line-height:40px;font-weight:700}.h2{font-size:24px;line-height:32px;font-weight:700}.h3{font-size:16px;line-height:24px;font-weight:700}
+.mono{font-family:var(--mono)}
+/* buttons */
+.btn{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 16px;border-radius:var(--r1);background:var(--bg3);border:1px solid var(--line);font-weight:500;transition:background var(--d1),transform var(--d1) var(--ease),border-color var(--d1);user-select:none}
+.btn:hover{background:var(--bg4)}.btn:active{transform:scale(.97)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}.btn.pri:hover{filter:brightness(1.08)}
+.btn.ghost{background:transparent;border-color:transparent}.btn.ghost:hover{background:var(--bg3)}
+.btn.danger{color:var(--danger)}
+.btn.sm{height:32px;padding:0 12px}.btn.block{width:100%}
+.btn[disabled]{opacity:.4;pointer-events:none}
+.ib{position:relative;overflow:hidden;width:40px;height:40px;border-radius:var(--r1);display:inline-grid;place-items:center;color:var(--text2);transition:background var(--d1),color var(--d1),transform var(--d1) var(--ease);flex:none}
+.ib:hover{background:var(--bg3);color:var(--text)}.ib:active{transform:scale(.9)}.ib.on{color:var(--accent)}
+.ib.sm{width:32px;height:32px}
+.ripple{position:absolute;border-radius:50%;background:currentColor;opacity:.2;transform:scale(0);animation:rip .5s var(--ease) forwards;pointer-events:none}
+@keyframes rip{to{transform:scale(1);opacity:0}}
+/* inputs */
+.field{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+.field label{font-size:12px;line-height:16px;color:var(--text2);font-weight:500}
+.inp{height:40px;padding:0 12px;transition:border-color var(--d1),box-shadow var(--d2)}
+.inp:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}
+.field .err{color:var(--danger);font-size:12px;line-height:16px;min-height:16px}
+.inp.bad{border-color:var(--danger)}
+.shake{animation:shake .4s var(--ease)}
+@keyframes shake{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+.search{position:relative}.search .ic{position:absolute;left:12px;top:10px;color:var(--text3)}.search .inp{padding-left:40px}
+/* avatar */
+.av{--s:40px;position:relative;width:var(--s);height:var(--s);border-radius:50%;flex:none;display:grid;place-items:center;font-weight:700;font-size:calc(var(--s)*.4);color:var(--text);background:var(--bg4);background-size:cover;background-position:center;user-select:none}
+.av.t0{background-color:color-mix(in srgb,var(--accent) 12%,var(--bg4))}.av.t1{background-color:color-mix(in srgb,var(--accent) 24%,var(--bg4))}.av.t2{background-color:color-mix(in srgb,var(--accent) 36%,var(--bg4))}.av.t3{background-color:color-mix(in srgb,var(--text) 14%,var(--bg4))}.av.t4{background-color:color-mix(in srgb,var(--text) 24%,var(--bg4))}
+.av.s24{--s:24px}.av.s32{--s:32px}.av.s48{--s:48px}.av.s64{--s:64px}.av.s96{--s:96px}
+.av.sq{border-radius:16px}.av.rail{--s:48px;border-radius:24px;transition:border-radius var(--d2) var(--ease),background var(--d2)}
+.dot{position:absolute;right:-2px;bottom:-2px;width:12px;height:12px;border-radius:50%;border:2px solid var(--bg1);background:var(--text3)}
+.dot.online{background:var(--accent)}
+.dot.online::after{content:"";position:absolute;inset:-2px;border-radius:50%;border:1px solid var(--accent);animation:pulse 2.4s var(--ease) infinite}
+.dot.away{background:linear-gradient(90deg,var(--accent) 50%,var(--bg1) 50%);box-shadow:inset 0 0 0 1px var(--accent)}
+.dot.offline{background:var(--bg1);box-shadow:inset 0 0 0 2px var(--text3)}
+@keyframes pulse{0%{transform:scale(.8);opacity:.9}100%{transform:scale(1.8);opacity:0}}
+.badge{min-width:20px;height:20px;padding:0 8px;border-radius:10px;background:var(--accent);color:var(--on-accent);font-size:12px;line-height:20px;font-weight:700;text-align:center;flex:none}
+.badge.pop{animation:pop .5s var(--spring)}
+@keyframes pop{0%{transform:scale(.4)}100%{transform:scale(1)}}
+.tag{display:inline-block;height:16px;padding:0 8px;border-radius:8px;font-size:12px;line-height:16px;background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent);font-weight:500}
+/* shell */
+#shell{position:fixed;inset:0;display:grid;grid-template-columns:var(--rail) var(--side) 1fr;background:var(--bg0)}
+#shell.hasPanel{grid-template-columns:var(--rail) var(--side) 1fr var(--panel)}
+#rail{background:var(--bg0);display:flex;flex-direction:column;align-items:center;padding:16px 0;gap:8px;overflow-y:auto}
+#rail .sp{flex:1}
+.rbtn{position:relative;width:48px;height:48px;flex:none;display:grid;place-items:center;border-radius:24px;background:var(--bg3);color:var(--text2);transition:border-radius var(--d2) var(--ease),background var(--d2),color var(--d2),transform var(--d1)}
+.rbtn:hover{border-radius:16px;color:var(--text);background:var(--bg4)}.rbtn:active{transform:scale(.92)}
+.rbtn.on{border-radius:16px;background:var(--accent);color:var(--on-accent)}
+.rbtn .pip{position:absolute;left:-12px;top:16px;width:4px;height:0;border-radius:0 4px 4px 0;background:var(--text);transition:height var(--d2) var(--ease)}
+.rbtn.on .pip{height:16px}.rbtn.unread .pip{height:8px}
+.rbtn .badge{position:absolute;right:-4px;bottom:-4px;border:2px solid var(--bg0);height:20px}
+.rsep{width:32px;height:1px;background:var(--line);flex:none}
+#side{background:var(--bg1);display:flex;flex-direction:column;min-width:0;border-radius:16px 0 0 0;border-left:1px solid var(--line);border-top:1px solid var(--line)}
+.side-h{height:56px;padding:0 16px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--line);flex:none}
+.side-b{flex:1;overflow-y:auto;padding:8px}
+.nav{display:flex;align-items:center;gap:16px;height:40px;padding:0 8px 0 16px;border-radius:var(--r1);color:var(--text2);width:100%;text-align:left;transition:background var(--d1),color var(--d1),transform var(--d1)}
+.nav:hover{background:var(--bg3);color:var(--text)}.nav:active{transform:scale(.98)}
+.nav.on{background:var(--bg4);color:var(--text)}
+.nav .badge{margin-left:auto}
+.sec{padding:16px 16px 8px;font-size:12px;line-height:16px;color:var(--text3);font-weight:700;display:flex;align-items:center;gap:8px;width:100%;text-align:left}
+.sec .ic{transition:transform var(--d2) var(--ease)}.sec.shut .ic{transform:rotate(-90deg)}
+.acc{display:grid;grid-template-rows:1fr;transition:grid-template-rows var(--d3) var(--ease)}.acc>div{overflow:hidden}
+.acc.shut{grid-template-rows:0fr}
+#main{position:relative;background:var(--bg2);display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden;border-top:1px solid var(--line)}
+#panel{background:var(--bg1);border-left:1px solid var(--line);border-top:1px solid var(--line);display:flex;flex-direction:column;min-width:0}
+.top{height:56px;flex:none;padding:0 16px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--line);background:var(--bg2);position:relative;z-index:2}
+.top .t{font-weight:700;font-size:16px}
+.page{flex:1;min-height:0;overflow-y:auto;padding:24px;overscroll-behavior:contain}
+.page>.in{max-width:880px;margin:0 auto}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--bg2)}
+.screen.enter{animation:slideIn var(--d3) var(--ease) both}
+.screen.back{animation:slideBack var(--d3) var(--ease) both}
+@keyframes slideIn{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
+@keyframes slideBack{from{opacity:0;transform:translateX(-24px)}to{opacity:1;transform:none}}
+/* list rows */
+.item{position:relative;display:flex;align-items:center;gap:16px;min-height:var(--row);padding:8px 16px;border-radius:var(--r1);width:100%;text-align:left;transition:background var(--d1),transform var(--d1);background:transparent}
+.item:hover{background:var(--bg3)}.item.on{background:var(--bg4)}
+.swipe{position:relative;overflow:hidden;border-radius:var(--r1)}
+.swipe .acts{position:absolute;right:0;top:0;bottom:0;display:flex;opacity:0;transition:opacity var(--d1)}.swipe.open .acts{opacity:1}
+.swipe .acts button{width:72px;display:grid;place-items:center;background:var(--bg4);color:var(--text)}
+.swipe .acts button.d{background:var(--danger);color:#fff}
+.swipe .item{background:var(--bg1);touch-action:pan-y;transition:transform var(--d2) var(--ease),background var(--d1)}
+.swipe .item.drag{transition:none}
+.card{background:var(--bg1);border:1px solid var(--line);border-radius:var(--r2);padding:24px}
+.grid{display:grid;gap:16px}
+.reveal{opacity:0;transform:translateY(16px);transition:opacity var(--d4) var(--ease),transform var(--d4) var(--ease)}.reveal.in{opacity:1;transform:none}
+/* segmented / tabs */
+.seg{display:inline-flex;padding:4px;background:var(--bg1);border:1px solid var(--line);border-radius:12px;position:relative;gap:0}
+.seg button{position:relative;z-index:1;height:32px;padding:0 16px;border-radius:8px;color:var(--text2);font-weight:500;transition:color var(--d2)}
+.seg button.on{color:var(--text)}
+.seg .pill{position:absolute;z-index:0;top:4px;bottom:4px;border-radius:8px;background:var(--bg4);transition:left var(--d3) var(--ease),width var(--d3) var(--ease)}
+.tabs{display:flex;gap:16px;border-bottom:1px solid var(--line);padding:0 16px}
+.tabs button{height:48px;color:var(--text2);position:relative;font-weight:500}
+.tabs button.on{color:var(--text)}.tabs button.on::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--accent);animation:grow var(--d3) var(--ease)}
+@keyframes grow{from{transform:scaleX(0)}}
+/* switch */
+.sw{width:48px;height:24px;border-radius:12px;background:var(--bg4);position:relative;flex:none;transition:background var(--d2)}
+.sw::after{content:"";position:absolute;left:4px;top:4px;width:16px;height:16px;border-radius:50%;background:var(--text);transition:transform var(--d2) var(--spring)}
+.sw.on{background:var(--accent)}.sw.on::after{transform:translateX(24px);background:var(--on-accent)}
+.setrow{display:flex;align-items:center;gap:16px;padding:16px 0;border-bottom:1px solid var(--line)}.setrow:last-child{border:0}
+/* select */
+.sel{position:relative}.sel>button{width:100%;height:40px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;border:1px solid var(--line);border-radius:var(--r1);background:var(--bg1)}
+/* progress */
+.prog{height:8px;background:var(--bg4);border-radius:4px;overflow:hidden}.prog i{display:block;height:100%;background:var(--accent);border-radius:4px;width:0;transition:width var(--d4) var(--ease)}
+/* skeleton */
+.sk{background:linear-gradient(90deg,var(--bg3) 25%,var(--bg4) 50%,var(--bg3) 75%);background-size:200% 100%;animation:sk 1.4s linear infinite;border-radius:8px}
+@keyframes sk{to{background-position:-200% 0}}
+.spin{width:24px;height:24px;border-radius:50%;border:2px solid var(--bg4);border-top-color:var(--accent);animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+/* kinetic type */
+.kin .ch{display:inline-block;overflow:hidden;vertical-align:top}.kin .ch>i{display:inline-block;font-style:normal;transform:translateY(110%);animation:kin .7s var(--ease) forwards;animation-delay:calc(var(--i)*40ms + var(--base,0ms))}
+@keyframes kin{to{transform:none}}
+/* empty */
+.empty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:48px 24px;color:var(--text2)}
+.empty .ring{width:72px;height:72px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;color:var(--text3);margin-bottom:8px;animation:float 4s ease-in-out infinite}
+@keyframes float{50%{transform:translateY(-4px)}}
+/* floating layers */
+#layers{position:fixed;inset:0;pointer-events:none;z-index:50}
+#layers>*{pointer-events:auto}
+.scrim{position:fixed;inset:0;background:var(--scrim);animation:fade var(--d2) both;z-index:50}
+@keyframes fade{from{opacity:0}}
+.modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(480px,calc(100vw - 32px));max-height:calc(100% - 64px);overflow:auto;background:var(--bg1);border:1px solid var(--line);border-radius:var(--r2);box-shadow:var(--shadow);padding:24px;z-index:51;animation:modal var(--d3) var(--spring) both}
+@keyframes modal{from{opacity:0;transform:translate(-50%,-48%) scale(.94)}}
+.modal.out,.scrim.out{animation:fadeout var(--d2) forwards}@keyframes fadeout{to{opacity:0}}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-height:80%;overflow:auto;background:var(--bg1);border-top:1px solid var(--line);border-radius:16px 16px 0 0;padding:8px 16px calc(16px + env(safe-area-inset-bottom,0px));z-index:51;animation:sheet var(--d3) var(--ease) both}
+@keyframes sheet{from{transform:translateY(100%)}}
+.sheet.out{animation:sheetout var(--d2) var(--ease) forwards}@keyframes sheetout{to{transform:translateY(100%)}}
+.sheet .grab{width:40px;height:4px;border-radius:2px;background:var(--bg4);margin:0 auto 16px}
+.pop{}
+.menu{position:fixed;min-width:208px;padding:8px;background:var(--bg3);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);z-index:60;animation:menu var(--d2) var(--ease) both;transform-origin:var(--ox,top left)}
+@keyframes menu{from{opacity:0;transform:scale(.95) translateY(-4px)}}
+.menu button{display:flex;align-items:center;gap:16px;height:40px;padding:0 16px;width:100%;border-radius:var(--r1);text-align:left;transition:background var(--d1)}
+.menu button:hover{background:var(--bg4)}.menu button.danger{color:var(--danger)}.menu hr{border:0;height:1px;background:var(--line);margin:8px 0}
+.menu .emo{display:grid;grid-template-columns:repeat(6,40px);gap:0}.menu .emo button{width:40px;padding:0;justify-content:center;font-size:20px}
+.tip{position:fixed;z-index:70;padding:4px 8px;background:var(--text);color:var(--bg0);border-radius:8px;font-size:12px;line-height:16px;pointer-events:none;animation:fade var(--d1) both;white-space:nowrap}
+#toasts{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;align-items:center;z-index:80;pointer-events:none;width:min(420px,calc(100vw - 32px))}
+.toast{pointer-events:auto;display:flex;align-items:center;gap:16px;width:100%;padding:12px 16px;background:var(--bg3);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);animation:toast var(--d3) var(--spring) both}
+.toast.out{animation:toastout var(--d2) var(--ease) forwards}
+.toast .ic{color:var(--accent)}.toast.err .ic{color:var(--danger)}
+@keyframes toast{from{opacity:0;transform:translateY(24px) scale(.96)}}@keyframes toastout{to{opacity:0;transform:translateY(8px)}}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:90}
+/* morph FAB */
+.fab{position:absolute;right:24px;bottom:24px;width:56px;height:56px;border-radius:28px;background:var(--accent);color:var(--on-accent);box-shadow:var(--shadow);overflow:hidden;z-index:20;transition:width var(--d4) var(--ease),height var(--d4) var(--ease),border-radius var(--d4) var(--ease),background var(--d3),color var(--d3)}
+.fab>.f{position:absolute;inset:0;display:grid;place-items:center;transition:opacity var(--d2),transform var(--d3) var(--ease)}
+.fab>.p{position:absolute;inset:0;opacity:0;pointer-events:none;padding:16px;overflow:auto;transition:opacity var(--d2);text-align:left}
+.fab.open{width:min(360px,calc(100vw - 48px));height:min(480px,calc(100% - 48px));border-radius:16px;background:var(--bg3);color:var(--text);border:1px solid var(--line)}
+.fab.open>.f{opacity:0;transform:rotate(90deg) scale(.5);pointer-events:none}.fab.open>.p{opacity:1;pointer-events:auto;transition-delay:.18s}
+/* auth */
+#auth{position:fixed;inset:0;display:grid;place-items:center;background:var(--bg0);overflow:hidden;padding:16px}
+#auth .bgl{position:absolute;inset:-10%;pointer-events:none}
+#auth .bgl i{position:absolute;border:1px solid var(--line);border-radius:50%;transition:transform .3s var(--ease)}
+.authbox{position:relative;width:min(400px,100%);animation:rise var(--d4) var(--ease) both}
+@keyframes rise{from{opacity:0;transform:translateY(24px)}}
+.authbox .card{padding:32px}
+.logo{display:inline-grid;place-items:center;width:48px;height:48px;border-radius:16px;background:var(--accent);color:var(--on-accent)}
+/* chat */
+.msgs{flex:1;min-height:0;overflow-y:auto;padding:16px 16px 8px;display:flex;flex-direction:column;position:relative;overscroll-behavior:contain}
+.msgs>.sp{flex:1}
+.day{align-self:center;margin:16px 0 8px;padding:0 16px;height:24px;border-radius:12px;background:var(--bg3);font-size:12px;line-height:24px;color:var(--text2)}
+.m{position:relative;display:flex;gap:8px;max-width:100%;padding:2px 0;transition:background var(--d1)}
+.m.enter{animation:msgin var(--d3) var(--ease) both}
+@keyframes msgin{from{opacity:0;transform:translateY(16px) scale(.98)}}
+.m.me{flex-direction:row-reverse}
+.m .body{display:flex;flex-direction:column;max-width:min(560px,78%);min-width:0}
+.m.me .body{align-items:flex-end}
+.m .who{font-size:12px;line-height:16px;color:var(--text2);margin:0 8px 4px}
+.bub{position:relative;padding:8px 16px;border-radius:16px;background:var(--bg3);border:1px solid var(--line);word-break:break-word;white-space:pre-wrap;transition:transform var(--d1)}
+.m:not(.me) .bub.first{border-top-left-radius:4px}
+.m.me .bub{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.m.me .bub.first{border-top-right-radius:4px}
+.m.me .bub a{color:inherit}
+.bub code,.dl code{font-family:var(--mono);font-size:13px;background:color-mix(in srgb,var(--text) 12%,transparent);padding:0 4px;border-radius:4px}
+.mention{color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent);border-radius:4px;padding:0 4px;font-weight:500}
+.m.me .mention{color:inherit;background:rgb(0 0 0/.14)}
+.meta{display:flex;gap:8px;align-items:center;font-size:12px;line-height:16px;color:var(--text3);margin:4px 8px 0}
+.meta .st{display:inline-flex;align-items:center;gap:4px}.meta .st.read{color:var(--accent)}.meta .st.fail{color:var(--danger);cursor:pointer}
+.quote{display:flex;gap:8px;font-size:12px;line-height:16px;padding:8px;margin-bottom:8px;border-radius:8px;background:rgb(0 0 0/.12);border-left:2px solid currentColor;opacity:.85;cursor:pointer;min-width:0}
+.m:not(.me) .quote{background:var(--bg4)}
+.react{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.react button{height:24px;padding:0 8px;border-radius:12px;background:var(--bg3);border:1px solid var(--line);font-size:12px;display:flex;align-items:center;gap:4px;transition:transform var(--d1) var(--spring)}
+.react button:hover{transform:scale(1.08)}.react button.mine{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent)}
+.react button.bump{animation:pop .4s var(--spring)}
+.thr{margin-top:4px;color:var(--accent);font-size:12px;line-height:16px;display:flex;gap:4px;align-items:center;padding:4px 8px}
+.pinned{color:var(--accent)}
+.tools{position:absolute;top:-16px;display:none;gap:0;padding:4px;background:var(--bg3);border:1px solid var(--line);border-radius:var(--r1);z-index:3;animation:fade var(--d1) both}
+.m:not(.me) .tools{right:8px}.m.me .tools{left:8px}
+@media (hover:hover){.m:hover .tools{display:flex}}
+.m.flash{animation:flash 1.4s var(--ease)}@keyframes flash{0%,30%{background:color-mix(in srgb,var(--accent) 16%,transparent)}}
+/* discord list style */
+.dl{display:flex;gap:16px;padding:2px 16px 2px 8px;margin:0 -16px;position:relative;transition:background var(--d1)}
+.dl:hover{background:color-mix(in srgb,var(--text) 4%,transparent)}
+.dl .ts{width:40px;flex:none;font-size:11px;line-height:24px;color:var(--text3);text-align:center;opacity:0}.dl:hover .ts{opacity:1}
+.dl .c{min-width:0;flex:1;white-space:pre-wrap;word-break:break-word}
+.dl .hd{display:flex;gap:8px;align-items:baseline}.dl .hd b{font-weight:700}
+.dl .tools{right:16px}
+.dl.enter{animation:msgin var(--d3) var(--ease) both}
+.dl .quote{background:var(--bg3);color:var(--text2)}
+/* composer */
+.comp{flex:none;padding:8px 16px 16px;position:relative}
+.compbox{display:flex;align-items:flex-end;gap:0;background:var(--bg1);border:1px solid var(--line);border-radius:16px;padding:4px;transition:border-color var(--d2),box-shadow var(--d2)}
+.compbox:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 14%,transparent)}
+.compbox textarea,.compbox textarea:focus{border:0;background:transparent;resize:none;max-height:160px;min-height:40px;padding:8px;box-shadow:none}
+.compbox textarea:focus-visible{outline:0}
+.send{background:var(--bg4);color:var(--text3);transition:background var(--d2),color var(--d2),transform var(--d2) var(--spring)}
+.send.rdy{background:var(--accent);color:var(--on-accent)}.send.rdy:hover{background:var(--accent)}
+.send.rdy .ic{animation:nudge .4s var(--spring)}@keyframes nudge{from{transform:translate(-4px,4px)}}
+.ctx{display:flex;align-items:center;gap:8px;padding:8px 16px;margin:0 0 8px;border-radius:12px;background:var(--bg1);border:1px solid var(--line);font-size:12px;line-height:16px;animation:slideUp var(--d2) var(--ease)}
+@keyframes slideUp{from{opacity:0;transform:translateY(8px)}}
+.typing{height:24px;padding:0 16px;font-size:12px;line-height:24px;color:var(--text2);display:flex;gap:8px;align-items:center;flex:none}
+.typing .d{display:inline-flex;gap:4px}.typing .d i{width:4px;height:4px;border-radius:50%;background:var(--text2);animation:bounce 1s infinite}
+.typing .d i:nth-child(2){animation-delay:.15s}.typing .d i:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,60%,100%{transform:none}30%{transform:translateY(-4px)}}
+.att{display:flex;align-items:center;gap:8px;padding:8px 16px 8px 8px;border-radius:12px;background:var(--bg4);margin-top:4px;min-width:0;max-width:280px}
+.m.me .att{background:rgb(0 0 0/.14)}
+.att .fi{width:40px;height:40px;border-radius:8px;display:grid;place-items:center;background:var(--bg3);flex:none}
+.thumb{display:block;max-width:280px;max-height:240px;border-radius:12px;margin-top:4px;cursor:zoom-in;background:var(--bg4);min-height:48px;min-width:96px;object-fit:cover}
+.dropv{position:absolute;inset:8px;border:2px dashed var(--accent);border-radius:16px;background:color-mix(in srgb,var(--bg2) 88%,transparent);display:none;place-items:center;z-index:10;pointer-events:none;color:var(--accent);font-weight:700}
+.dragging .dropv{display:grid;animation:fade var(--d2)}
+.jump{position:absolute;right:24px;bottom:8px;z-index:5}
+.ptr{position:absolute;left:50%;top:0;width:40px;height:40px;margin-left:-20px;border-radius:50%;background:var(--bg3);border:1px solid var(--line);display:grid;place-items:center;z-index:5;transform:translateY(-48px);transition:transform var(--d2) var(--ease)}
+.ac{position:absolute;left:16px;right:16px;bottom:100%;margin-bottom:-8px;background:var(--bg3);border:1px solid var(--line);border-radius:12px;padding:8px;box-shadow:var(--shadow);z-index:6;animation:menu var(--d2) var(--ease)}
+.ac button{display:flex;gap:8px;align-items:center;width:100%;height:40px;padding:0 8px;border-radius:8px;text-align:left}.ac button.on,.ac button:hover{background:var(--bg4)}
+/* stats */
+.stats{grid-template-columns:repeat(auto-fit,minmax(176px,1fr))}
+.stat{padding:16px;border:1px solid var(--line);border-radius:var(--r2);background:var(--bg1)}
+.stat b{display:block;font-size:32px;line-height:40px;font-variant-numeric:tabular-nums}
+.bars{display:flex;align-items:flex-end;gap:8px;height:120px}
+.bars div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:8px;height:100%}
+.bars i{display:block;width:100%;max-width:40px;border-radius:4px 4px 0 0;background:color-mix(in srgb,var(--accent) 40%,var(--bg4));height:0;transition:height .8s var(--ease)}
+.bars div.today i{background:var(--accent)}
+.donut{width:96px;height:96px;transform:rotate(-90deg)}.donut circle{fill:none;stroke-width:8}.donut .bg{stroke:var(--bg4)}.donut .fg{stroke:var(--accent);stroke-linecap:round;transition:stroke-dashoffset 1s var(--ease)}
+.fgrid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
+.fcard{border:1px solid var(--line);border-radius:var(--r2);overflow:hidden;background:var(--bg1);transition:transform var(--d2) var(--ease),border-color var(--d2)}
+.fcard:hover{transform:translateY(-2px);border-color:var(--text3)}
+.fcard .pv{height:112px;background:var(--bg3);display:grid;place-items:center;color:var(--text3);background-size:cover;background-position:center}
+table.tb{width:100%;border-collapse:collapse}.tb th{text-align:left;font-size:12px;color:var(--text3);padding:8px 16px;font-weight:700}.tb td{padding:8px 16px;border-top:1px solid var(--line)}
+.tbw{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r2);background:var(--bg1)}
+.lightbox{position:fixed;inset:0;z-index:70;background:var(--scrim);display:grid;place-items:center;animation:fade var(--d2);cursor:zoom-out}
+.lightbox img{max-width:92vw;max-height:88vh;border-radius:12px;animation:modal var(--d3) var(--spring);transform:none}
+@keyframes modal2{from{opacity:0;transform:scale(.94)}}
+.lightbox img{animation:modal2 var(--d3) var(--spring)}
+/* tab bar + mobile */
+#tabbar{display:none}
+@media (max-width:1180px){
+  #shell.hasPanel{grid-template-columns:var(--rail) var(--side) 1fr}
+  #panel{position:fixed;right:0;top:0;bottom:0;width:min(360px,100%);z-index:40;animation:panelin var(--d3) var(--ease) both;box-shadow:var(--shadow)}
+}
+@keyframes panelin{from{transform:translateX(100%)}}
+@media (max-width:820px){
+  #shell,#shell.hasPanel{grid-template-columns:1fr;grid-template-rows:1fr auto}
+  #rail,#side{position:fixed;top:0;bottom:0;z-index:45;transition:transform var(--d3) var(--ease)}
+  #rail{left:0;width:var(--rail);transform:translateX(-100%);padding-top:calc(16px + env(safe-area-inset-top,0px))}
+  #side{left:var(--rail);width:min(288px,calc(100vw - var(--rail) - 24px));transform:translateX(calc(-100% - var(--rail)));border-radius:0;padding-top:env(safe-area-inset-top,0px)}
+  #shell.drawer #rail,#shell.drawer #side{transform:none}
+  #main{border-top:0;padding-top:env(safe-area-inset-top,0px)}
+  #tabbar{display:flex;height:calc(56px + env(safe-area-inset-bottom,0px));padding-bottom:env(safe-area-inset-bottom,0px);background:var(--bg1);border-top:1px solid var(--line);z-index:10}
+  #tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;font-size:11px;line-height:16px;color:var(--text3);position:relative;transition:color var(--d2)}
+  #tabbar button.on{color:var(--accent)}
+  #tabbar button .ic{transition:transform var(--d3) var(--spring)}#tabbar button.on .ic{transform:translateY(-2px) scale(1.1)}
+  #tabbar .badge{position:absolute;top:4px;left:calc(50% + 4px);height:16px;min-width:16px;line-height:16px;font-size:11px;padding:0 4px}
+  #shell.inroom #tabbar{display:none}
+  #shell{height:100%}
+  .page{padding:16px}
+  .m .body{max-width:84%}
+  .fab{right:16px;bottom:16px}
+  .hd-only{display:inline-grid!important}
+  .top{padding-left:8px}
+}
+.hd-only{display:none}
+@media (min-width:821px){#drawerscrim{display:none}}
+@media (prefers-reduced-motion:reduce){html:not([data-motion="full"]) *{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;transition-delay:0s!important}}
+html[data-motion="off"] *{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;transition-delay:0s!important}
+html[data-motion="off"] .kin .ch>i{transform:none}
+.screen.static .kin .ch>i{animation:none;transform:none}
+.screen.static .reveal{opacity:1;transform:none;transition:none}
+.screen.static{animation:none}
+#drawerscrim{position:fixed;inset:0;background:var(--scrim);z-index:44;animation:fade var(--d2) both}
+.auth-sw{margin-top:24px;text-align:center}
+.pw-meter{height:4px;border-radius:2px;background:var(--bg4);overflow:hidden}.pw-meter i{display:block;height:100%;width:0;background:var(--accent);transition:width var(--d3) var(--ease),opacity var(--d3);opacity:.5}
+/* ===== rooms ===== */
+.ob{display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 8px;border-radius:4px;background:var(--accent);color:var(--on-accent);font-size:11px;font-weight:700;letter-spacing:.08em;flex:none;line-height:1}
+.ob .ic{width:12px;height:12px}
+.ob.sm{height:16px;padding:0 4px;font-size:10px}
+.av.oav{background:var(--accent)!important;color:var(--on-accent)!important}
+.rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(288px,1fr));gap:16px}
+.rcard{display:flex;flex-direction:column;gap:16px;padding:24px;border:1px solid var(--line);border-radius:var(--r2);background:var(--bg1);transition:border-color var(--d2)}
+.rcard:hover{border-color:var(--text3)}
+.rcard .rav{width:48px;height:48px;border-radius:16px;display:grid;place-items:center;background:var(--bg3);color:var(--text2);flex:none}
+.rcard.off{background:color-mix(in srgb,var(--accent) 8%,var(--bg1));border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
+.rcard.off:hover{border-color:var(--accent)}
+.rcard.off .rav{background:var(--accent);color:var(--on-accent)}
+.rdesc{color:var(--text2);min-height:48px;margin:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
+.pips{display:flex;gap:8px}
+.pips i{width:40px;height:8px;border-radius:4px;background:var(--bg4);position:relative;overflow:hidden}
+.pips i::after{content:"";position:absolute;inset:0;background:var(--accent);transform:scaleX(0);transform-origin:left;transition:transform var(--d4) var(--ease);transition-delay:calc(var(--i)*120ms)}
+.pips i.on::after{transform:scaleX(1)}
+.rnew{display:grid;grid-template-columns:minmax(0,1fr) 336px;gap:24px;align-items:start}
+@media(max-width:900px){.rnew{grid-template-columns:minmax(0,1fr)}}
+</style>
+<script>
+'use strict';
+/* ===== utils ===== */
+const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const now=()=>Date.now();
+const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+const mkStore=k=>{try{const s=window[k];s.setItem('_t','1');s.removeItem('_t');return s}catch(e){const m={};return{getItem:x=>m[x]??null,setItem:(x,v)=>{m[x]=String(v)},removeItem:x=>{delete m[x]}}}};
+const LS=mkStore('localStorage'),SS=mkStore('sessionStorage');
+const jget=(s,k,d)=>{try{const v=s.getItem(k);return v?JSON.parse(v):d}catch(e){return d}};
+const jset=(s,k,v)=>{try{s.setItem(k,JSON.stringify(v));return true}catch(e){return false}};
+const fmtT=t=>{const d=new Date(t);return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')};
+const fmtD=t=>{const d=new Date(t),n=new Date();const k=x=>x.toDateString();if(k(d)===k(n))return '今日';const y=new Date(n-864e5);if(k(d)===k(y))return '昨日';return (d.getFullYear()!==n.getFullYear()?d.getFullYear()+'年':'')+(d.getMonth()+1)+'月'+d.getDate()+'日'};
+const fmtRel=t=>{const s=(now()-t)/1000;if(s<60)return 'たった今';if(s<3600)return Math.floor(s/60)+'分前';if(s<86400)return Math.floor(s/3600)+'時間前';return fmtD(t)};
+const fmtSize=b=>b<1024?b+' B':b<1048576?(b/1024).toFixed(1)+' KB':(b/1048576).toFixed(1)+' MB';
+const debounce=(f,ms)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>f(...a),ms)}};
+/* ===== icons ===== */
+const ICONS={
+home:'<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M16 4.7a3.5 3.5 0 0 1 0 6.6M18 14.4c2.2.6 3.5 2.6 3.5 5.6"/>',
+user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/>',
+chat:'<path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9l-5 4V6a1 1 0 0 1 1-1z"/>',
+hash:'<path d="M5 9h15M4 15h15M10 3 8 21M16 3l-2 18"/>',
+bell:'<path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4zM10 21h4"/>',
+bellOff:'<path d="M6 16v-5a6 6 0 0 1 9-5.2M18 11v5l2 2H8M10 21h4M3 3l18 18"/>',
+search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>',
+sliders:'<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>',
+folder:'<path d="M3 6a1 1 0 0 1 1-1h5l2 2h8a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/>',
+shield:'<path d="M12 3 4 6v6c0 4.5 3.200 7.800 8 9 4.800-1.200 8-4.500 8-9V6z"/><path d="m9 12 2 2 4-4"/>',
+plus:'<path d="M12 5v14M5 12h14"/>',
+send:'<path d="M21 3 10 14M21 3l-7 18-4-7-7-4z"/>',
+clip:'<path d="m20 11-8.500 8.500a5 5 0 0 1-7-7L13 4a3.300 3.300 0 0 1 4.700 4.700L9.200 17.200a1.700 1.700 0 0 1-2.400-2.400L14.500 7"/>',
+image:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.700"/><path d="m21 16-5-5-9 9"/>',
+smile:'<circle cx="12" cy="12" r="9"/><path d="M8.500 14a4.500 4.500 0 0 0 7 0M9 9.500h.01M15 9.500h.01"/>',
+reply:'<path d="M9 14 4 9l5-5"/><path d="M4 9h9a7 7 0 0 1 7 7v3"/>',
+edit:'<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.500 6.500 4 4"/>',
+trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
+pin:'<path d="M9 4h6l-1 6 3 3H7l3-3zM12 13v8"/>',
+copy:'<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
+more:'<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',
+x:'<path d="M6 6l12 12M18 6 6 18"/>',
+menu:'<path d="M4 7h16M4 12h16M4 17h16"/>',
+check:'<path d="m5 12.500 4.500 4.500L19 7.500"/>',
+check2:'<path d="m2 12.500 4.500 4.500L15 8M10 15.500l1.500 1.500L21 7.500"/>',
+down:'<path d="m6 9 6 6 6-6"/>',right:'<path d="m9 6 6 6-6 6"/>',left:'<path d="m15 6-6 6 6 6"/>',
+logout:'<path d="M9 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h4M16 8l4 4-4 4M20 12H9"/>',
+sun:'<circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.600 5.600 7 7M17 17l1.400 1.400M18.400 5.600 17 7M7 17l-1.400 1.400"/>',
+moon:'<path d="M20 14.500A8 8 0 0 1 9.500 4 8 8 0 1 0 20 14.500z"/>',
+lock:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+upload:'<path d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/>',
+download:'<path d="M12 4v12M7 11l5 5 5-5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/>',
+file:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>',
+video:'<rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/>',
+thread:'<path d="M4 4h11v8H8l-4 4z"/><path d="M19 9v8l-4-3h-5"/>',
+userPlus:'<circle cx="9" cy="8" r="3.500"/><path d="M2.500 20c0-3.600 2.900-6 6.500-6s6.500 2.400 6.500 6M19 8v6M16 11h6"/>',
+compass:'<circle cx="12" cy="12" r="9"/><path d="m15.500 8.500-2 5-5 2 2-5z"/>',
+refresh:'<path d="M20 11a8 8 0 0 0-14-4L4 9M4 4v5h5M4 13a8 8 0 0 0 14 4l2-2M20 20v-5h-5"/>',
+arrowDown:'<path d="M12 5v14M6 13l6 6 6-6"/>',
+chart:'<path d="M4 20V4M4 20h16M8 16v-4M12 16V8M16 16v-6"/>',
+clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+alert:'<path d="M12 3 2.500 20h19z"/><path d="M12 10v4M12 17h.01"/>',
+info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.500h.01"/>',
+ban:'<circle cx="12" cy="12" r="9"/><path d="m5.600 5.600 12.800 12.800"/>',
+volume:'<path d="M4 9v6h4l5 4V5L8 9zM17 9a4 4 0 0 1 0 6"/>',
+rooms:'<rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><path d="M17 13v8M13 17h8"/>',
+logo:'<path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9l-5 4V6a1 1 0 0 1 1-1z"/><path d="M8.500 11h.01M12 11h.01M15.500 11h.01"/>'
+};
+document.body.insertAdjacentHTML('afterbegin','<svg width="0" height="0" style="position:absolute" aria-hidden="true">'+Object.entries(ICONS).map(([k,v])=>`<symbol id="i-${k}" viewBox="0 0 24 24">${v}</symbol>`).join('')+'</svg>');
+const ic=(n,c='')=>`<svg class="ic ${c}" aria-hidden="true"><use href="#i-${n}"/></svg>`;
+/* ===== files (IndexedDB) ===== */
+const Blobs=(()=>{let db=null,mem=new Map();
+ const open=()=>new Promise(res=>{if(db)return res(db);try{const r=indexedDB.open('wc-files',1);r.onupgradeneeded=()=>r.result.createObjectStore('b');r.onsuccess=()=>{db=r.result;res(db)};r.onerror=()=>res(null)}catch(e){res(null)}});
+ const run=async(mode,fn)=>{const d=await open();if(!d)return fn(null);return new Promise((res,rej)=>{const t=d.transaction('b',mode);const rq=fn(t.objectStore('b'));t.oncomplete=()=>res(rq&&rq.result);t.onerror=()=>rej(t.error)})};
+ return{put:async(id,b)=>{const d=await open();if(!d){mem.set(id,b);return}await run('readwrite',s=>s.put(b,id))},
+ get:async id=>{const d=await open();if(!d)return mem.get(id);return run('readonly',s=>s.get(id))},
+ del:async id=>{const d=await open();if(!d){mem.delete(id);return}await run('readwrite',s=>s.delete(id))}}})();
+const urlCache=new Map();
+async function fileURL(id){if(urlCache.has(id))return urlCache.get(id);const b=await Blobs.get(id);if(!b)return null;const u=URL.createObjectURL(b);urlCache.set(id,u);return u}
+/* ===== db ===== */
+const KEY='wc.db.v1',PKEY='wc.pres.v1';
+const BOT='u_bot',SYS_SV='sv_welcome';
+function seed(){
+ const t=now();
+ const d={v:1,users:{},rooms:{},msgs:{},servers:{},notifs:{},files:{}};
+ d.users[BOT]={id:BOT,name:'ミオ',handle:'mio',bot:true,bio:'ウェブチャットの案内ボットです。話しかけると返事をします。',status:'online',tone:2,role:'user',created:t,friends:[],reqIn:[],reqOut:[],settings:{notif:'all'}};
+ const chs=[['r_wel','ようこそ','はじめに読むチャンネル'],['r_gen','雑談','なんでも話せる場所'],['r_new','お知らせ','アップデートの情報']].map(([id,name,topic])=>{d.rooms[id]={id,type:'channel',server:SYS_SV,name,topic,pins:[],muted:{},created:t};d.msgs[id]=[];return id});
+ d.servers[SYS_SV]={id:SYS_SV,name:'ウェブチャット公式',desc:'使い方の案内と雑談のための公式コミュニティ',owner:BOT,members:[BOT],cats:[{id:'c1',name:'はじめに',rooms:['r_wel','r_new']},{id:'c2',name:'コミュニティ',rooms:['r_gen']}],created:t};
+ const say=(r,txt,dt)=>d.msgs[r].push({id:uid('m'),room:r,from:BOT,text:txt,ts:t-dt,readBy:[BOT],reactions:{}});
+ say('r_wel','ウェブチャットへようこそ。ここは公式サーバーです。',9e4);
+ say('r_wel','別のタブをもう一つ開いて新しいアカウントを作ると、同じブラウザの中で本当に会話できます。フレンド申請、グループ作成、既読、入力中表示もそのまま動きます。',8e4);
+ say('r_wel','メッセージを右クリック（スマホは長押し）すると、返信・スレッド・ピン留め・編集・削除ができます。',7e4);
+ say('r_new','バージョン1.0を公開しました。',6e4);
+ say('r_gen','最初のあいさつはここでどうぞ。',5e4);
+ return d}
+let db=null;
+function load(){const d=jget(LS,KEY,null);return d&&d.v?d:null}
+function boot(){db=load();if(!db)db=seed();db.rooms=db.rooms||{};if(ensureOfficial(db)||!load())persist(true)}
+let memDB=null;
+function persist(silent){
+ try{LS.setItem(KEY,JSON.stringify(db))}catch(e){if(!silent)toast('保存できませんでした。容量がいっぱいかもしれません','err');return false}
+ try{bc.postMessage({t:'db',from:TAB})}catch(e){} return true}
+/* transaction: reload the latest db, apply, save */
+function tx(fn){const fresh=load();if(fresh)db=fresh;if(me&&db.users[me.id])me=db.users[me.id];const r=fn(db);const ok=persist();if(!ok){const fr=load();if(fr)db=fr}return r}
+const TAB=uid('t');
+let bc;try{bc=new BroadcastChannel('wc')}catch(e){bc={postMessage(){},onmessage:null}}
+/* ===== hash ===== */
+async function hash(pw,salt){try{const b=new TextEncoder().encode(salt+':'+pw);const h=await crypto.subtle.digest('SHA-256',b);return [...new Uint8Array(h)].map(x=>x.toString(16).padStart(2,'0')).join('')}catch(e){let h=5381;for(const c of salt+pw)h=(h*33^c.charCodeAt(0))>>>0;return 'x'+h}}
+/* ===== session & helpers ===== */
+let me=null;
+const U=id=>db.users[id];
+const handleOk=h=>/^[a-z0-9_]{3,16}$/.test(h);
+function findByHandle(h){h=String(h||'').replace(/^@/,'').toLowerCase();return Object.values(db.users).find(u=>u.handle===h)}
+function pres(id){const u=U(id);if(!u)return 'offline';if(u.bot)return 'online';if(u.status==='invisible')return 'offline';const p=jget(LS,PKEY,{})[id];if(!p||now()-p.t>35000)return 'offline';return (u.status==='away'||p.idle)?'away':'online'}
+const presLabel={online:'オンライン',away:'離席中',offline:'オフライン'};
+function roomsOf(uidv){return Object.values(db.rooms).filter(r=>r.type!=='channel'&&r.members.includes(uidv))}
+function dmKey(a,b){return [a,b].sort().join('|')}
+function roomName(r,viewer=me.id){if(r.type==='dm'){const o=r.members.find(x=>x!==viewer)||viewer;return U(o)?.name||'不明'}return r.name}
+function dmOther(r){return r.members.find(x=>x!==me.id)||me.id}
+const msgsOf=id=>db.msgs[id]||(db.msgs[id]=[]);
+function isThread(m){return !!m.thread}
+function mainMsgs(id){return msgsOf(id).filter(m=>!m.thread&&!m.del)}
+function lastMsg(id){const a=msgsOf(id);for(let i=a.length-1;i>=0;i--)if(!a[i].del&&!a[i].thread)return a[i];return null}
+function canAccess(r,uidv=me.id){if(!r)return false;if(r.type==='channel'){const s=db.servers[r.server];return !!s&&s.members.includes(uidv)}return r.members.includes(uidv)}
+function unreadOf(r){return msgsOf(r.id).filter(m=>!m.del&&m.from!==me.id&&!m.readBy.includes(me.id)&&(!m.thread)).length}
+function roomMembers(r){return r.type==='channel'?db.servers[r.server].members:r.members}
+function totalUnread(){let n=0;for(const r of roomsOf(me.id))if(!r.muted[me.id])n+=unreadOf(r);for(const s of Object.values(db.servers))if(s.members.includes(me.id))for(const c of s.cats)for(const id of c.rooms){const r=db.rooms[id];if(r&&!r.muted[me.id])n+=unreadOf(r)}return n}
+function serverUnread(s){let n=0;for(const c of s.cats)for(const id of c.rooms){const r=db.rooms[id];if(r&&!r.muted[me.id])n+=unreadOf(r)}return n}
+function notify(to,n){if(to===BOT||!db.users[to])return;const a=db.notifs[to]||(db.notifs[to]=[]);a.unshift({id:uid('n'),ts:now(),read:false,...n});if(a.length>100)a.length=100}
+function myServers(){return Object.values(db.servers).filter(s=>s.members.includes(me.id))}
+function ensureDM(a,b){let r=Object.values(db.rooms).find(r=>r.type==='dm'&&dmKey(r.members[0],r.members[1])===dmKey(a,b));if(!r){r={id:uid('r'),type:'dm',members:[a,b],pins:[],muted:{},created:now()};db.rooms[r.id]=r;db.msgs[r.id]=[]}return r}
+/* mini text formatter (escape first) */
+function fmt(t){let s=esc(t);s=s.replace(/`([^`\n]+)`/g,'<code>$1</code>').replace(/\*\*([^*\n]+)\*\*/g,'<b>$1</b>').replace(/(https?:\/\/[^\s<]+)/g,'<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>').replace(/(^|\s)@([a-z0-9_]{3,16})\b/g,(m,a,h)=>{const u=findByHandle(h);return u?`${a}<span class="mention">@${esc(u.name)}</span>`:m});return s}
+/* ===== app settings (per device) ===== */
+let AS=Object.assign({theme:'dark',motion:'auto',density:'comfortable',sound:false},jget(LS,'wc.app',{}));
+function applyAS(){const r=document.documentElement;if(AS.theme==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',AS.theme);r.setAttribute('data-motion',AS.motion==='off'?'off':AS.motion==='full'?'full':'auto');r.setAttribute('data-density',AS.density)}
+function saveAS(){jset(LS,'wc.app',AS);applyAS()}
+const reduced=()=>AS.motion==='off'||(AS.motion!=='full'&&matchMedia('(prefers-reduced-motion:reduce)').matches);
+/* ===== layers ===== */
+const layers=document.createElement('div');layers.id='layers';document.body.appendChild(layers);
+const toastBox=document.createElement('div');toastBox.id='toasts';document.body.appendChild(toastBox);
+function toast(msg,kind='ok',opt={}){const t=document.createElement('div');t.className='toast '+(kind==='err'?'err':'');t.innerHTML=ic(kind==='err'?'alert':kind==='info'?'bell':'check')+`<span class="grow ell">${esc(msg)}</span>`+(opt.action?`<button class="btn sm ghost" style="color:var(--accent)">${esc(opt.action)}</button>`:'');
+ toastBox.appendChild(t);while(toastBox.children.length>3)toastBox.firstChild.remove();
+ const close=()=>{t.classList.add('out');setTimeout(()=>t.remove(),220)};
+ if(opt.action)t.querySelector('button').onclick=()=>{opt.fn&&opt.fn();close()};
+ const to=setTimeout(close,opt.ms||3200);t.onclick=e=>{if(e.target.tagName!=='BUTTON'){clearTimeout(to);close()}}}
+function closeLayers(){$$('.menu,.tip').forEach(x=>x.remove())}
+function openModal(html,opt={}){const sc=document.createElement('div');sc.className='scrim';const m=document.createElement('div');m.className='modal';m.setAttribute('role','dialog');m.innerHTML=html;layers.append(sc,m);
+ const close=()=>{sc.classList.add('out');m.classList.add('out');setTimeout(()=>{sc.remove();m.remove()},200);document.removeEventListener('keydown',kd)};
+ const kd=e=>{if(e.key==='Escape')close()};document.addEventListener('keydown',kd);sc.onclick=close;
+ m.close=close;m.addEventListener('click',e=>{if(e.target.closest('[data-close]'))close()});const f=m.querySelector('input,textarea');if(f&&!opt.noFocus)setTimeout(()=>f.focus(),60);return m}
+function confirmBox(title,body,okLabel,fn,danger=true){const m=openModal(`<div class="h3" style="margin-bottom:8px">${esc(title)}</div><p class="mute" style="margin-bottom:24px">${esc(body)}</p><div class="row" style="justify-content:flex-end"><button class="btn" data-close>キャンセル</button><button class="btn ${danger?'danger':'pri'}" id="cfok">${esc(okLabel)}</button></div>`);m.querySelector('#cfok').onclick=()=>{m.close();fn()}}
+function openSheet(html){const sc=document.createElement('div');sc.className='scrim';const s=document.createElement('div');s.className='sheet';s.innerHTML='<div class="grab"></div>'+html;layers.append(sc,s);
+ const close=()=>{sc.classList.add('out');s.classList.add('out');setTimeout(()=>{sc.remove();s.remove()},220)};sc.onclick=close;s.close=close;s.addEventListener('click',e=>{if(e.target.closest('[data-close]'))close()});
+ let y0=null;s.addEventListener('touchstart',e=>{if(s.scrollTop<=0)y0=e.touches[0].clientY},{passive:true});s.addEventListener('touchmove',e=>{if(y0!=null&&e.touches[0].clientY-y0>80){y0=null;close()}},{passive:true});return s}
+/* anchored menu / popover */
+function openMenu(html,x,y,opt={}){closeLayers();const m=document.createElement('div');m.className='menu';if(opt.cls)m.classList.add(opt.cls);m.innerHTML=html;layers.appendChild(m);
+ const w=m.offsetWidth,h=m.offsetHeight;let nx=x,ny=y;if(nx+w>innerWidth-8)nx=innerWidth-w-8;if(ny+h>innerHeight-8)ny=Math.max(8,y-h-(opt.h||0));if(nx<8)nx=8;
+ m.style.left=nx+'px';m.style.top=ny+'px';m.style.setProperty('--ox',(x>nx+w/2?'top right':'top left'));return m}
+function menuAt(el,html,opt={}){const r=el.getBoundingClientRect();return openMenu(html,opt.right?r.right-208:r.left,r.bottom+8,{h:r.height+16,...opt})}
+document.addEventListener('pointerdown',e=>{if(!e.target.closest('.menu')&&!e.target.closest('[data-menu]'))$$('.menu').forEach(x=>x.remove())},true);
+document.addEventListener('scroll',()=>$$('.menu').forEach(x=>x.remove()),true);
+/* tooltip */
+let tipT;document.addEventListener('pointerover',e=>{const el=e.target.closest('[data-tip]');clearTimeout(tipT);$$('.tip').forEach(x=>x.remove());if(!el||e.pointerType==='touch')return;tipT=setTimeout(()=>{const t=document.createElement('div');t.className='tip';t.textContent=el.dataset.tip;document.body.appendChild(t);const r=el.getBoundingClientRect();t.style.left=clamp(r.left+r.width/2-t.offsetWidth/2,8,innerWidth-t.offsetWidth-8)+'px';t.style.top=(r.top-t.offsetHeight-8<8?r.bottom+8:r.top-t.offsetHeight-8)+'px'},450)});
+document.addEventListener('pointerdown',()=>{clearTimeout(tipT);$$('.tip').forEach(x=>x.remove())});
+/* ripple */
+document.addEventListener('pointerdown',e=>{const el=e.target.closest('.btn,.ib,.rbtn,.nav,.item,#tabbar button');if(!el||reduced())return;const r=el.getBoundingClientRect(),s=Math.max(r.width,r.height)*2;const d=document.createElement('span');d.className='ripple';d.style.cssText=`width:${s}px;height:${s}px;left:${e.clientX-r.left-s/2}px;top:${e.clientY-r.top-s/2}px`;
+ const cs=getComputedStyle(el);if(cs.position==='static')el.style.position='relative';if(cs.overflow==='visible')el.style.overflow='hidden';el.appendChild(d);setTimeout(()=>d.remove(),520)});
+/* particles */
+const fx=document.createElement('canvas');fx.id='fx';document.body.appendChild(fx);const fc=fx.getContext('2d');let parts=[],raf=0;
+function fitFx(){fx.width=innerWidth*devicePixelRatio;fx.height=innerHeight*devicePixelRatio}fitFx();addEventListener('resize',fitFx);
+function burst(x,y,n=14,spread=1){if(reduced())return;const col=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#4cc09a';for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,v=(1.5+Math.random()*3.5)*spread;parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-1.5,life:1,r:1.5+Math.random()*2.5,col})}if(!raf)raf=requestAnimationFrame(tickFx)}
+function tickFx(){fc.clearRect(0,0,fx.width,fx.height);parts=parts.filter(p=>p.life>0);for(const p of parts){p.x+=p.vx;p.y+=p.vy;p.vy+=.12;p.vx*=.98;p.life-=.02;fc.globalAlpha=Math.max(0,p.life);fc.fillStyle=p.col;fc.beginPath();fc.arc(p.x*devicePixelRatio,p.y*devicePixelRatio,p.r*devicePixelRatio,0,7);fc.fill()}fc.globalAlpha=1;raf=parts.length?requestAnimationFrame(tickFx):0;if(!raf)fc.clearRect(0,0,fx.width,fx.height)}
+const burstEl=(el,n,s)=>{const r=el.getBoundingClientRect();burst(r.left+r.width/2,r.top+r.height/2,n,s)};
+/* kinetic type */
+function kin(text,base=0){return `<span class="kin" style="--base:${base}ms" aria-label="${esc(text)}">${[...text].map((c,i)=>`<span class="ch" aria-hidden="true"><i style="--i:${i}">${c===' '?'&nbsp;':esc(c)}</i></span>`).join('')}</span>`}
+/* count up */
+function countUp(el,to,ms=900){if(reduced()||el.closest('.static')){el.textContent=to;return}const t0=performance.now();const f=t=>{const k=Math.min(1,(t-t0)/ms),e=1-Math.pow(1-k,3);el.textContent=Math.round(to*e);if(k<1)requestAnimationFrame(f)};requestAnimationFrame(f)}
+/* reveal on scroll */
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.1});
+function observeReveals(root=document){$$('.reveal:not(.in)',root).forEach((el,i)=>{el.style.transitionDelay=Math.min(i*60,360)+'ms';io.observe(el)})}
+/* avatar html */
+const tonesN=5;
+function av(u,size='',dotOn=true,extra=''){if(!u)return `<span class="av ${size}"></span>`;const bg=u.avatar&&urlCache.get(u.avatar);if(u.avatar&&!bg)fileURL(u.avatar).then(x=>x&&$$(`[data-av="${u.avatar}"]`).forEach(e=>{e.style.backgroundImage=`url(${x})`;e.textContent=''}));
+ const st=dotOn?pres(u.id):'';return `<span class="av ${size} t${(u.tone??0)%tonesN} ${extra}" data-av="${u.avatar||''}" ${bg?`style="background-image:url(${bg})"`:''}>${bg?'':esc([...(u.name||'?')][0])}${dotOn?`<i class="dot ${st}" data-pu="${u.id}"></i>`:''}</span>`}
+function roomAv(r,size=''){if(r.type==='dm')return av(U(dmOther(r)),size);return `<span class="av ${size} t${(r.created%5)} ${r.official?'oav':''}" style="border-radius:16px">${ic(r.type==='channel'?'hash':r.official?'shield':'users','')}</span>`}
+function refreshDots(){$$('.dot[data-pu]').forEach(d=>{const s=pres(d.dataset.pu);d.className='dot '+s})}
+/* segmented control */
+function segHTML(id,items,cur){return `<div class="seg" id="${id}" role="tablist">${'<span class="pill"></span>'}${items.map(([v,l])=>`<button role="tab" data-v="${v}" class="${v===cur?'on':''}">${l}</button>`).join('')}</div>`}
+function segInit(root,cb){const seg=root;const place=()=>{const b=$('button.on',seg),p=$('.pill',seg);if(b&&p){p.style.left=b.offsetLeft+'px';p.style.width=b.offsetWidth+'px'}};requestAnimationFrame(place);seg.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;$$('button',seg).forEach(x=>x.classList.toggle('on',x===b));place();cb(b.dataset.v)});return place}
+/* custom select */
+function selHTML(id,items,cur){const l=(items.find(i=>i[0]===cur)||items[0])[1];return `<div class="sel" id="${id}" data-v="${cur}"><button type="button" data-menu>${esc(l)}${ic('down','sm')}</button></div>`}
+function selInit(root,items,cb){root.querySelector('button').onclick=e=>{const m=menuAt(root,items.map(([v,l])=>`<button data-v="${v}">${esc(l)}${v===root.dataset.v?'<span class="grow"></span>'+ic('check','sm'):''}</button>`).join(''));m.style.minWidth=root.offsetWidth+'px';m.onclick=ev=>{const b=ev.target.closest('button');if(!b)return;root.dataset.v=b.dataset.v;root.querySelector('button').firstChild.textContent=items.find(i=>i[0]===b.dataset.v)[1];m.remove();cb(b.dataset.v)}}}
+function empty(icon,title,sub,action=''){return `<div class="empty reveal"><div class="ring">${ic(icon,'lg')}</div><div class="h3" style="color:var(--text)">${esc(title)}</div><div style="max-width:320px">${sub}</div>${action}</div>`}
+function skeletonList(n=6){return Array.from({length:n},(_,i)=>`<div class="row" style="padding:8px 16px;height:56px;gap:16px"><div class="sk" style="width:40px;height:40px;border-radius:50%"></div><div class="grow col" style="gap:8px"><div class="sk" style="height:12px;width:${50+((i*17)%35)}%"></div><div class="sk" style="height:12px;width:${30+((i*23)%40)}%"></div></div></div>`).join('')}
+function beep(){if(!AS.sound)return;try{const a=new(window.AudioContext||window.webkitAudioContext)();const o=a.createOscillator(),g=a.createGain();o.frequency.value=660;o.connect(g);g.connect(a.destination);g.gain.setValueAtTime(.0001,a.currentTime);g.gain.exponentialRampToValueAtTime(.08,a.currentTime+.02);g.gain.exponentialRampToValueAtTime(.0001,a.currentTime+.25);o.start();o.stop(a.currentTime+.26)}catch(e){}}
+async function copyText(t){try{await navigator.clipboard.writeText(t);toast('コピーしました')}catch(e){const a=document.createElement('textarea');a.value=t;a.style.cssText='position:fixed;opacity:0';document.body.appendChild(a);a.select();try{document.execCommand('copy');toast('コピーしました')}catch(_){toast('コピーできませんでした','err')}a.remove()}}
+function resizeImg(file,max=160){return new Promise((res,rej)=>{const i=new Image(),u=URL.createObjectURL(file);i.onload=()=>{const k=Math.min(1,max/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=i.width*k;c.height=i.height*k;c.getContext('2d').drawImage(i,0,0,c.width,c.height);c.toBlob(b=>{URL.revokeObjectURL(u);b?res(b):rej()},'image/jpeg',.85)};i.onerror=()=>rej();i.src=u})}
+/* ===== router / shell ===== */
+let route={n:'home'},stack=[];
+const UIS={filter:'all',shut:{},panel:null,drawer:false,roomLimit:40};
+const $main=()=>$('#main'),$shell=()=>$('#shell');
+function go(n,a={},opt={}){const prev=route;if(!opt.replace)stack.push(prev);if(stack.length>50)stack.shift();route={n,...a};if(!(n==='room'&&prev.n==='room'&&prev.id===a.id)){if(n!=='room')UIS.panel=null;else if(prev.id!==a.id)UIS.panel=UIS.panel&&UIS.panel.keep?UIS.panel:null;UIS.roomLimit=40}UIS.drawer=false;try{history.pushState({},'')}catch(e){}renderAll(opt.dir||'enter')}
+function goBack(){const p=stack.pop();if(p){route=p;UIS.drawer=false;renderAll('back')}else go('home',{},{dir:'back'})}
+addEventListener('popstate',()=>{if(me&&stack.length){const p=stack.pop();route=p;renderAll('back')}});
+function curServerId(){if(route.n==='server')return route.sid;if(route.n==='room'){const r=db.rooms[route.id];if(r&&r.type==='channel')return r.server}return null}
+function renderAll(dir){if(!me)return;renderRail();renderSide();renderMain(dir);renderPanel();renderTab();syncShell()}
+function syncShell(){const s=$shell();s.classList.toggle('inroom',route.n==='room');s.classList.toggle('hasPanel',!!UIS.panel&&route.n==='room');s.classList.toggle('drawer',UIS.drawer);$('#panel').classList.toggle('hide',!(UIS.panel&&route.n==='room'));$('#drawerscrim').classList.toggle('hide',!UIS.drawer)}
+function renderRail(){
+ const sid=curServerId(),homeOn=!sid&&!['servers','rooms','roomNew'].includes(route.n);const dm=totalDM();
+ const sv=myServers().map(s=>{const n=serverUnread(s);return `<button class="rbtn ${sid===s.id?'on':''} ${n&&sid!==s.id?'unread':''}" data-act="server" data-id="${s.id}" data-tip="${esc(s.name)}" aria-label="${esc(s.name)}"><i class="pip"></i><span class="h3">${esc([...s.name][0])}</span>${n&&sid!==s.id?`<span class="badge">${n>99?'99+':n}</span>`:''}</button>`}).join('');
+ $('#rail').innerHTML=`<button class="rbtn ${homeOn?'on':''}" data-act="nav" data-n="home" data-tip="ホーム" aria-label="ホーム"><i class="pip"></i>${ic('home','lg')}${dm?`<span class="badge">${dm>99?'99+':dm}</span>`:''}</button><div class="rsep"></div>${sv}
+ <button class="rbtn" data-act="addServer" data-tip="サーバーを作成・参加" aria-label="サーバーを追加">${ic('plus','lg')}</button>
+ <button class="rbtn ${['servers','rooms','roomNew'].includes(route.n)?'on':''}" data-act="nav" data-n="rooms" data-tip="ルームとコミュニティ" aria-label="ルームとコミュニティ"><i class="pip"></i>${ic('rooms','lg')}</button><div class="sp"></div>
+ <button data-act="meMenu" data-menu aria-label="アカウント" style="border-radius:50%">${av(me,'s48')}</button>`}
+function totalDM(){let n=0;for(const r of roomsOf(me.id))if(!r.muted[me.id])n+=unreadOf(r);return n}
+function visibleRooms(){return roomsOf(me.id).filter(r=>{const h=r.hidden&&r.hidden[me.id];const l=lastMsg(r.id);return !h||(l&&l.ts>h)}).sort((a,b)=>((lastMsg(b.id)?.ts)||b.created)-((lastMsg(a.id)?.ts)||a.created))}
+function pendingReq(){return (me.reqIn||[]).length}
+function unreadNotif(){return (db.notifs[me.id]||[]).filter(n=>!n.read).length}
+function preview(r){const m=lastMsg(r.id);if(!m)return '<span class="faint">まだメッセージはありません</span>';const who=m.from===me.id?'あなた: ':(r.type==='group'?(U(m.from)?.name||'')+': ':'');return esc(who+(m.text||(m.files&&m.files.length?'ファイルを送信しました':'')).replace(/\n/g,' '))}
+function chatItem(r){const n=unreadOf(r),l=lastMsg(r.id),muted=r.muted[me.id];
+ return `<div class="swipe" data-room="${r.id}"><div class="acts"><button data-act="mute" data-id="${r.id}" aria-label="ミュート">${ic(muted?'bell':'bellOff')}</button><button class="d" data-act="hideRoom" data-id="${r.id}" aria-label="非表示">${ic('trash')}</button></div>
+ <button class="item ${route.n==='room'&&route.id===r.id?'on':''}" data-act="room" data-id="${r.id}">${roomAv(r)}<span class="grow col"><span class="row"><b class="grow ell" style="font-weight:${n?700:500}">${esc(roomName(r))}</b>${r.official?obBadge(1):''}<span class="xs faint">${l?fmtT(l.ts):''}</span></span><span class="row"><span class="grow ell xs ${n?'':'mute'}" style="${n?'color:var(--text)':''}">${preview(r)}</span>${muted?ic('bellOff','sm faint'):''}${n&&!muted?`<span class="badge">${n>99?'99+':n}</span>`:''}</span></span></button></div>`}
+function chatListHTML(){let rs=visibleRooms();if(UIS.filter==='unread')rs=rs.filter(r=>unreadOf(r));if(UIS.filter==='group')rs=rs.filter(r=>r.type==='group');
+ return rs.length?rs.map(chatItem).join(''):`<div class="empty" style="padding:32px 16px">${UIS.filter==='all'?'チャットはまだありません。右下の＋、またはフレンド一覧から始められます。':'該当するチャットはありません。'}</div>`}
+function renderSide(){const side=$('#side'),sid=curServerId();
+ if(sid){const s=db.servers[sid];if(!s){go('home',{},{replace:1});return}const own=s.owner===me.id;
+  side.innerHTML=`<div class="side-h"><button class="row grow" data-act="serverMenu" data-id="${sid}" data-menu style="text-align:left;min-width:0"><b class="grow ell h3">${esc(s.name)}</b>${ic('down','sm')}</button></div><div class="side-b scroll">${s.cats.map(c=>`<button class="sec ${UIS.shut[c.id]?'shut':''}" data-act="acc" data-id="${c.id}">${ic('down','sm')}<span class="grow">${esc(c.name)}</span>${own?`<span class="ib sm" data-act="addChannel" data-id="${sid}" data-cat="${c.id}" data-tip="チャンネルを追加" style="width:24px;height:24px">${ic('plus','sm')}</span>`:''}</button><div class="acc ${UIS.shut[c.id]?'shut':''}"><div>${c.rooms.map(id=>db.rooms[id]).filter(Boolean).map(r=>{const n=unreadOf(r);return `<button class="nav ${route.n==='room'&&route.id===r.id?'on':''}" data-act="room" data-id="${r.id}">${ic('hash','sm')}<span class="grow ell" style="font-weight:${n?700:400};color:${n?'var(--text)':''}">${esc(r.name)}</span>${r.muted[me.id]?ic('bellOff','sm faint'):n?`<span class="badge">${n}</span>`:''}</button>`}).join('')}</div></div>`).join('')}</div>`;return}
+ const nv=(n,i,l,b)=>`<button class="nav ${route.n===n?'on':''}" data-act="nav" data-n="${n}">${ic(i)}<span>${l}</span>${b?`<span class="badge">${b}</span>`:''}</button>`;
+ side.innerHTML=`<div class="side-h"><span class="logo" style="width:32px;height:32px;border-radius:8px">${ic('logo','sm')}</span><b class="h3 grow">ウェブチャット</b><button class="ib sm" data-act="nav" data-n="search" data-tip="検索" aria-label="検索">${ic('search')}</button></div>
+ <div class="side-b scroll" id="sideScroll">${nv('home','home','ホーム')}${nv('friends','users','フレンド',pendingReq()||'')}${nv('rooms','rooms','ルーム')}${nv('notifs','bell','通知',unreadNotif()||'')}${nv('files','folder','画像・ファイル')}${me.role==='admin'?nv('admin','shield','ユーザー管理'):''}
+ <button class="sec ${UIS.shut.set?'shut':''}" data-act="acc" data-id="set">${ic('down','sm')}<span>設定</span></button><div class="acc ${UIS.shut.set?'shut':''}"><div>${nv('settings','user','ユーザー設定')}${nv('appset','sliders','アプリ設定')}</div></div>
+ <div class="sec" style="padding-top:24px">チャット</div><div style="padding:0 8px 8px">${segHTML('chatSeg',[['all','すべて'],['unread','未読'],['group','グループ']],UIS.filter)}</div><div id="chatList">${chatListHTML()}</div></div>`;
+ segInit($('#chatSeg'),v=>{UIS.filter=v;$('#chatList').innerHTML=chatListHTML()})}
+function renderTab(){const t=(n,i,l,b,alt=[])=>`<button class="${route.n===n||alt.includes(route.n)?'on':''}" data-act="nav" data-n="${n}">${ic(i)}${l}${b?`<span class="badge">${b}</span>`:''}</button>`;
+ $('#tabbar').innerHTML=t('home','chat','チャット',totalDM()||'',['room'])+t('friends','users','フレンド',pendingReq()||'')+t('rooms','compass','コミュニティ','',['server','servers','roomNew'])+t('notifs','bell','通知',unreadNotif()||'')+t('menu','menu','メニュー','',['settings','appset','profile','files','admin','search'])}
+/* main dispatcher */
+const R={};
+function renderMain(dir){const el=document.createElement('div');el.className='screen '+(dir==='back'?'back':dir==='none'?'static':'enter');
+ const f=R[route.n]||R.home;el.innerHTML=f(el)||'';const m=$main();const old=$('.screen',m);m.innerHTML='';m.appendChild(el);
+ const after=el._after;if(after)after();observeReveals(el);const fab=el._fab;}
+function renderPanel(){if(!(UIS.panel&&route.n==='room')){$('#panel').innerHTML='';return}panelHTML()}
+/* gestures: swipe rows */
+let sw=null;
+document.addEventListener('pointerdown',e=>{const it=e.target.closest('.swipe>.item');if(!it||e.target.closest('[data-act=mute],[data-act=hideRoom]'))return;$$('.swipe>.item').forEach(x=>{if(x!==it)x.style.transform=''});sw={it,x:e.clientX,y:e.clientY,dx:0,moved:false,base:it.style.transform?-144:0}});
+document.addEventListener('pointermove',e=>{if(!sw)return;const dx=e.clientX-sw.x,dy=e.clientY-sw.y;if(!sw.moved&&Math.abs(dx)>10&&Math.abs(dx)>Math.abs(dy)*1.5){sw.moved=true;sw.it.classList.add('drag');try{sw.it.setPointerCapture(e.pointerId)}catch(_){}}if(sw.moved){sw.it.parentElement.classList.add('open');sw.dx=dx;sw.it.style.transform=`translateX(${clamp(sw.base+dx,-144,0)}px)`}});
+const swEnd=()=>{if(!sw)return;const{it,moved,dx,base}=sw;it.classList.remove('drag');if(moved){const x=base+dx;it.style.transform=x<-60?'translateX(-144px)':'';if(x>=-60)setTimeout(()=>it.parentElement.classList.remove('open'),220);it.dataset.dragged='1';setTimeout(()=>delete it.dataset.dragged,50)}sw=null};
+document.addEventListener('pointerup',swEnd);document.addEventListener('pointercancel',swEnd);
+/* pull to refresh */
+function attachPTR(box,fn){let y0=null,pull=0;const ind=document.createElement('div');ind.className='ptr';ind.innerHTML='<div class="spin"></div>';box.parentElement.appendChild(ind);
+ box.addEventListener('touchstart',e=>{if(box.scrollTop<=0)y0=e.touches[0].clientY;else y0=null},{passive:true});
+ box.addEventListener('touchmove',e=>{if(y0==null)return;pull=Math.max(0,e.touches[0].clientY-y0);if(pull>0&&box.scrollTop<=0){ind.style.transition='none';ind.style.transform=`translateY(${Math.min(pull*.5,72)-48}px) rotate(${pull*3}deg)`}},{passive:true});
+ box.addEventListener('touchend',async()=>{if(y0==null)return;ind.style.transition='';if(pull>96){ind.style.transform='translateY(16px)';await sleep(700);fn()}ind.style.transform='';y0=null;pull=0})}
+/* ===== chat ===== */
+const A={};
+const EMOJI=['👍','❤️','😂','🎉','😮','🙏'];
+const EMOJI_ALL=['😀','😄','😁','😂','🙂','😉','😊','😍','🥰','😘','😎','🤔','😅','😢','😭','😡','👍','👏','🙌','🙏','💪','🎉','🔥','✨','❤️','💯','👀','🤝'];
+const CH={drafts:{},typing:{},pending:{},seen:{},outbox:jget(LS,'wc.outbox',[]),lastTypingSent:0};
+const draftOf=(id=route.id)=>CH.drafts[id]||(CH.drafts[id]={text:'',files:[],reply:null,edit:null});
+const curRoom=()=>route.n==='room'?db.rooms[route.id]:null;
+const roomOwner=r=>r.type==='channel'?db.servers[r.server]?.owner:r.owner;
+const canMod=r=>me.role==='admin'||roomOwner(r)===me.id;
+function roomSub(r){if(r.type==='dm'){const o=U(dmOther(r));return o?(o.bot?'ボット':presLabel[pres(o.id)]):''}if(r.type==='group')return r.members.length+'人のメンバー';return r.topic||''}
+R.room=el=>{const r=db.rooms[route.id];if(!r||!canAccess(r)){setTimeout(()=>go('home',{},{replace:1}));return ''}
+ const d=draftOf(),chan=r.type==='channel';
+ const lead=chan?`<button class="ib hd-only" data-act="drawer" aria-label="チャンネル一覧">${ic('menu')}</button>`:`<button class="ib hd-only" data-act="back" aria-label="戻る">${ic('left')}</button>`;
+ el.dataset.room=r.id;
+ el._after=()=>{const box=$('#msgs');setTimeout(()=>{renderMsgs({bottom:true,first:true});markRead()},reduced()?0:280);
+  box.addEventListener('scroll',onMsgScroll);const ta=$('#ta');ta.value=d.text;grow(ta);ctxBar();renderAtt();
+  ta.addEventListener('input',onType);ta.addEventListener('keydown',onKey);ta.addEventListener('keyup',acCheck);ta.addEventListener('click',acCheck);
+  bindMsgEvents(box);bindDrop(el);updateTyping();if(!matchMedia('(pointer:coarse)').matches)ta.focus()};
+ return `${''}<div class="top">${lead}${roomAv(r,'s32')}<div class="grow col" style="min-width:0"><b class="ell">${chan?'# ':''}${esc(roomName(r))}</b><span class="xs mute ell" id="roomSub">${esc(roomSub(r))}</span></div>
+ <button class="ib" data-act="panel" data-k="search" data-tip="メッセージ検索" aria-label="検索">${ic('search')}</button><button class="ib" data-act="panel" data-k="info:pins" data-tip="ピン留め" aria-label="ピン留め">${ic('pin')}</button><button class="ib ${r.muted[me.id]?'on':''}" data-act="mute" data-id="${r.id}" data-tip="${r.muted[me.id]?'ミュート中':'通知を切る'}" aria-label="ミュート">${ic(r.muted[me.id]?'bellOff':'bell')}</button><button class="ib ${UIS.panel?.k==='info'?'on':''}" data-act="panel" data-k="info:members" data-tip="メンバーと情報" aria-label="メンバー">${ic('users')}</button></div>
+ <div class="msgs" id="msgs">${skeletonMsgs()}</div><div class="typing" id="typing"></div><div class="comp" id="comp"><div id="ac"></div><div id="ctxbar"></div><div id="attlist"></div>
+ <div class="compbox"><button class="ib" data-act="attach" data-tip="ファイルを添付" aria-label="ファイルを添付">${ic('clip')}</button><textarea id="ta" rows="1" placeholder="${chan?'#'+esc(r.name)+' にメッセージを送信':'メッセージを入力'}" aria-label="メッセージ"></textarea><button class="ib" data-act="emojiPick" data-menu data-tip="絵文字" aria-label="絵文字">${ic('smile')}</button><button class="ib send" id="sendBtn" data-act="send" aria-label="送信">${ic('send')}</button></div></div>
+ <div class="dropv">ここにドロップして添付</div><button class="btn sm jump hide" id="jump" data-act="toBottom">${ic('arrowDown','sm')}最新へ</button><input type="file" id="fi" multiple hidden>`}
+function skeletonMsgs(){return `<div class="sp"></div>`+Array.from({length:5},(_,i)=>`<div class="row" style="padding:8px 0;${i%2?'flex-direction:row-reverse':''}"><div class="sk" style="width:32px;height:32px;border-radius:50%"></div><div class="sk" style="height:${40+(i*8)%24}px;width:${30+(i*13)%30}%;border-radius:16px"></div></div>`).join('')}
+function grow(ta){ta.style.height='auto';ta.style.height=Math.min(ta.scrollHeight,160)+'px'}
+function updSend(){const d=draftOf(),b=$('#sendBtn');if(b)b.classList.toggle('rdy',!!(d.text.trim()||d.files.length))}
+/* ---- message building ---- */
+function dayKey(t){return new Date(t).toDateString()}
+function statusOf(m,r){if(CH.pending[m.id]&&CH.pending[m.id]>now())return `<span class="st">${ic('clock','sm')}送信中</span>`;
+ const others=r.type==='channel'?[]:r.members.filter(x=>x!==me.id);const rd=m.readBy.filter(x=>x!==me.id&&others.includes(x)).length;
+ if(r.type==='channel')return `<span class="st">${ic('check','sm')}送信済み</span>`;
+ if(rd>0)return `<span class="st read">${ic('check2','sm')}${r.type==='group'?'既読 '+rd:'既読'}</span>`;return `<span class="st">${ic('check','sm')}送信済み</span>`}
+function quoteHTML(m){if(!m.replyTo)return '';const o=msgsOf(m.room).find(x=>x.id===m.replyTo);if(!o||o.del)return `<div class="quote"><span class="faint">削除されたメッセージ</span></div>`;return `<div class="quote" data-act="jump" data-id="${o.id}">${ic('reply','sm')}<span class="ell"><b>${esc(U(o.from)?.name||'')}</b> ${esc((o.text||'ファイル').slice(0,60))}</span></div>`}
+function filesHTML(m){return (m.files||[]).map(fid=>{const f=db.files[fid];if(!f)return `<div class="att"><span class="fi">${ic('file')}</span><span class="xs faint">削除されたファイル</span></div>`;
+ if(f.type.startsWith('image/'))return `<img class="thumb" data-fid="${fid}" data-act="lightbox" alt="${esc(f.name)}">`;if(f.type.startsWith('video/'))return `<video class="thumb" data-fid="${fid}" controls playsinline style="cursor:default"></video>`;
+ return `<div class="att" data-act="download" data-id="${fid}" style="cursor:pointer"><span class="fi">${ic('file')}</span><span class="grow col" style="min-width:0"><span class="ell">${esc(f.name)}</span><span class="xs mute">${fmtSize(f.size)}</span></span>${ic('download','sm')}</div>`}).join('')}
+function reactHTML(m){const e=Object.entries(m.reactions||{}).filter(([,a])=>a.length);if(!e.length)return '';return `<div class="react">${e.map(([k,a])=>`<button class="${a.includes(me.id)?'mine':''}" data-act="react" data-id="${m.id}" data-e="${k}" aria-label="リアクション ${k}">${k}<span>${a.length}</span></button>`).join('')}</div>`}
+function threadCount(m){const n=msgsOf(m.room).filter(x=>x.thread===m.id&&!x.del).length;return n?`<button class="thr" data-act="thread" data-id="${m.id}">${ic('thread','sm')}${n}件の返信</button>`:''}
+function toolsHTML(m){return `<div class="tools"><button class="ib sm" data-act="reactPick" data-id="${m.id}" data-menu data-tip="リアクション" aria-label="リアクション">${ic('smile','sm')}</button><button class="ib sm" data-act="reply" data-id="${m.id}" data-tip="返信" aria-label="返信">${ic('reply','sm')}</button><button class="ib sm" data-act="thread" data-id="${m.id}" data-tip="スレッド" aria-label="スレッド">${ic('thread','sm')}</button><button class="ib sm" data-act="msgMore" data-id="${m.id}" data-menu data-tip="その他" aria-label="その他">${ic('more','sm')}</button></div>`}
+function msgHTML(m,prev,r,isNew){const mine=m.from===me.id,u=U(m.from),first=!prev||prev.from!==m.from||m.ts-prev.ts>3e5||dayKey(prev.ts)!==dayKey(m.ts)||prev.sys;
+ const pin=r.pins.includes(m.id)?`<span class="pinned" data-tip="ピン留め中">${ic('pin','sm')}</span>`:'';
+ const body=(m.replyTo?quoteHTML(m):'')+(m.text?`<div>${fmt(m.text)}</div>`:'')+filesHTML(m);
+ if(r.type==='channel'){return `<div class="dl ${isNew?'enter':''}" data-mid="${m.id}">${first?av(u,'s40'):`<span class="ts">${fmtT(m.ts)}</span>`}<div class="c">${first?`<div class="hd"><b>${esc(u?.name||'不明')}</b>${u?.bot?'<span class="tag">BOT</span>':''}<span class="xs faint">${fmtD(m.ts)} ${fmtT(m.ts)}</span>${pin}</div>`:''}${body}${m.edited?'<span class="xs faint"> (編集済み)</span>':''}${reactHTML(m)}${threadCount(m)}</div>${toolsHTML(m)}</div>`}
+ const avt=mine?'':(first?av(u,'s32'):'<span style="width:32px;flex:none"></span>');
+ return `<div class="m ${mine?'me':''} ${isNew?'enter':''}" data-mid="${m.id}" style="margin-top:${first?8:0}px">${avt}<div class="body">${first&&!mine&&r.type==='group'?`<div class="who">${esc(u?.name||'不明')}</div>`:''}<div class="bub ${first?'first':''}">${body}</div>${reactHTML(m)}${threadCount(m)}<div class="meta">${pin}${m.edited?'<span>編集済み</span>':''}<span>${fmtT(m.ts)}</span>${mine?(m.local==='fail'?`<span class="st fail" data-act="resend" data-id="${m.id}">${ic('alert','sm')}未送信 タップで再送</span>`:statusOf(m,r)):''}</div></div>${toolsHTML(m)}</div>`}
+function renderMsgs(o={}){const box=$('#msgs'),r=curRoom();if(!box||!r)return;
+ const all=mainMsgs(r.id).concat(CH.outbox.filter(x=>x.room===r.id).map(x=>({...x,local:'fail'})));const slice=all.slice(-UIS.roomLimit),more=all.length>slice.length;
+ const seen=CH.seen[r.id]||(CH.seen[r.id]=new Set());const first=o.first||!seen.size&&!o.bottom;
+ const nearB=box.scrollHeight-box.scrollTop-box.clientHeight<96,ph=box.scrollHeight,pt=box.scrollTop;
+ let h='<div class="sp"></div>';if(more)h+=`<div id="moreTop" class="row" style="justify-content:center;padding:8px"><div class="spin"></div></div>`;
+ if(!all.length){h+=`<div class="empty" style="flex:0"><div class="ring">${ic('chat','lg')}</div><b style="color:var(--text)">${r.type==='channel'?'#'+esc(r.name)+' のはじまり':'会話を始めましょう'}</b><span>最初のメッセージを送ってみてください。</span></div>`}
+ slice.forEach((m,i)=>{const p=slice[i-1];if(!p||dayKey(p.ts)!==dayKey(m.ts))h+=`<div class="day">${fmtD(m.ts)}</div>`;h+=msgHTML(m,p,r,!first&&!seen.has(m.id)&&!o.noAnim)});
+ slice.forEach(m=>seen.add(m.id));box.innerHTML=h;
+ if(o.keepTop)box.scrollTop=box.scrollHeight-ph+pt;else if(o.bottom||nearB||first)box.scrollTop=box.scrollHeight;else box.scrollTop=pt;
+ hydrate(box);onMsgScroll()}
+function hydrate(root){$$('[data-fid]',root).forEach(el=>{if(el.src||el.dataset.done)return;el.dataset.done=1;fileURL(el.dataset.fid).then(u=>{if(u)el.src=u;else el.replaceWith(Object.assign(document.createElement('div'),{className:'att',innerHTML:`<span class="xs faint">ファイルを読み込めませんでした</span>`}))})})}
+let loadingMore=false;
+function onMsgScroll(){const box=$('#msgs');if(!box)return;const far=box.scrollHeight-box.scrollTop-box.clientHeight>240;$('#jump')?.classList.toggle('hide',!far);
+ if(box.scrollTop<56&&$('#moreTop')&&!loadingMore){loadingMore=true;setTimeout(()=>{UIS.roomLimit+=30;renderMsgs({keepTop:true,noAnim:true});loadingMore=false},reduced()?0:380)}}
+/* ---- events on messages ---- */
+function bindMsgEvents(box){let lp,lx,ly;
+ box.addEventListener('contextmenu',e=>{const m=e.target.closest('[data-mid]');if(!m||e.target.closest('a,video'))return;e.preventDefault();msgMenu(m.dataset.mid,e.clientX,e.clientY,true)});
+ box.addEventListener('touchstart',e=>{const m=e.target.closest('[data-mid]');if(!m)return;lx=e.touches[0].clientX;ly=e.touches[0].clientY;clearTimeout(lp);lp=setTimeout(()=>{navigator.vibrate&&navigator.vibrate(8);msgMenu(m.dataset.mid,lx,ly,false)},480)},{passive:true});
+ ['touchend','touchmove','touchcancel'].forEach(t=>box.addEventListener(t,()=>clearTimeout(lp),{passive:true}))}
+function msgMenuHTML(m,r){const mine=m.from===me.id,canDel=mine||canMod(r),pinned=r.pins.includes(m.id);
+ return `<div class="emo">${EMOJI.map(e=>`<button data-act="react" data-id="${m.id}" data-e="${e}" aria-label="${e}">${e}</button>`).join('')}</div><hr><button data-act="reply" data-id="${m.id}">${ic('reply')}返信</button><button data-act="thread" data-id="${m.id}">${ic('thread')}スレッドで返信</button><button data-act="copy" data-id="${m.id}">${ic('copy')}コピー</button><button data-act="pin" data-id="${m.id}">${ic('pin')}${pinned?'ピン留めを外す':'ピン留め'}</button>${mine?`<button data-act="edit" data-id="${m.id}">${ic('edit')}編集</button>`:''}${canDel?`<hr><button class="danger" data-act="del" data-id="${m.id}">${ic('trash')}削除</button>`:''}`}
+function msgMenu(id,x,y,mouse){const r=curRoom(),m=msgsOf(r.id).find(z=>z.id===id);if(!m||m.del)return;const html=msgMenuHTML(m,r);
+ if(innerWidth<=820||!mouse){const s=openSheet(`<div class="menu" style="position:static;box-shadow:none;border:0;background:none;animation:none;padding:0">${html}</div>`);s.addEventListener('click',e=>{if(e.target.closest('button'))s.close()})}else openMenu(html,x,y)}
+A.msgMore=(el)=>{const r=curRoom(),m=msgsOf(r.id).find(z=>z.id===el.dataset.id);const mm=menuAt(el,msgMenuHTML(m,r),{right:true});mm.addEventListener('click',e=>{if(e.target.closest('button'))mm.remove()})};
+A.reactPick=el=>{const mm=menuAt(el,`<div class="emo">${EMOJI.map(e=>`<button data-act="react" data-id="${el.dataset.id}" data-e="${e}">${e}</button>`).join('')}</div>`,{right:true});mm.addEventListener('click',e=>{if(e.target.closest('button'))mm.remove()})};
+A.react=el=>{const id=el.dataset.id,e=el.dataset.e,r=curRoom()||db.rooms[db.msgs&&Object.keys(db.rooms).find(k=>msgsOf(k).some(m=>m.id===id))];let added=false;
+ tx(d=>{const m=msgsOf(r.id).find(z=>z.id===id);if(!m)return;m.reactions=m.reactions||{};const a=m.reactions[e]||(m.reactions[e]=[]);const i=a.indexOf(me.id);if(i>=0){a.splice(i,1);if(!a.length)delete m.reactions[e]}else{a.push(me.id);added=true;if(m.from!==me.id)notify(m.from,{type:'reaction',from:me.id,text:`${me.name}さんが「${(m.text||'ファイル').slice(0,20)}」に ${e} でリアクションしました`,room:r.id})}});
+ refreshRoomViews();if(added){const t=$(`[data-mid="${id}"] .react [data-e="${e}"]`)||el;t.classList.add('bump');burstEl(t,10,.7)}};
+A.reply=el=>{const d=draftOf();d.reply=el.dataset.id;d.edit=null;ctxBar();$('#ta')?.focus()};
+A.edit=el=>{const r=curRoom(),m=msgsOf(r.id).find(z=>z.id===el.dataset.id);if(!m||m.from!==me.id)return;const d=draftOf();d.edit=m.id;d.reply=null;d.text=m.text;const ta=$('#ta');ta.value=m.text;grow(ta);ctxBar();updSend();ta.focus()};
+A.copy=el=>{const m=msgsOf(curRoom().id).find(z=>z.id===el.dataset.id);copyText(m?.text||'')};
+A.pin=el=>{const id=el.dataset.id;let on=false;tx(d=>{const r=d.rooms[route.id];const i=r.pins.indexOf(id);if(i>=0)r.pins.splice(i,1);else{r.pins.push(id);on=true}});toast(on?'ピン留めしました':'ピン留めを外しました');refreshRoomViews()};
+A.del=el=>{const id=el.dataset.id;confirmBox('メッセージを削除','このメッセージを削除します。元に戻せません。','削除',()=>{tx(d=>{const r=d.rooms[route.id],m=msgsOf(r.id).find(z=>z.id===id);if(m&&(m.from===me.id||canMod(r))){m.del=true;m.text='';r.pins=r.pins.filter(x=>x!==id)}});toast('削除しました');refreshRoomViews()})};
+A.jump=el=>jumpTo(el.dataset.id);
+function jumpTo(id){const r=curRoom();const all=mainMsgs(r.id);const i=all.findIndex(m=>m.id===id);if(i<0)return toast('メッセージが見つかりません','err');while(i<all.length-UIS.roomLimit)UIS.roomLimit+=40;renderMsgs({noAnim:true});const e=$(`[data-mid="${id}"]`);if(e){e.scrollIntoView({block:'center',behavior:reduced()?'auto':'smooth'});e.classList.remove('flash');void e.offsetWidth;e.classList.add('flash')}}
+A.toBottom=()=>{const b=$('#msgs');b.scrollTo({top:b.scrollHeight,behavior:reduced()?'auto':'smooth'})};
+A.lightbox=el=>{const l=document.createElement('div');l.className='lightbox';l.innerHTML=`<img src="${el.src}" alt="">`;l.onclick=()=>l.remove();document.body.appendChild(l);const k=e=>{if(e.key==='Escape'){l.remove();document.removeEventListener('keydown',k)}};document.addEventListener('keydown',k)};
+A.download=async el=>{const f=db.files[el.dataset.id];const u=await fileURL(f.id);if(!u)return toast('ファイルが見つかりません','err');const a=document.createElement('a');a.href=u;a.download=f.name;document.body.appendChild(a);a.click();a.remove();toast('ダウンロードを開始しました。ブロックされる環境では保存できない場合があります','info',{ms:4200})};
+/* ---- composer ---- */
+function ctxBar(){const d=draftOf(),b=$('#ctxbar');if(!b)return;const r=curRoom();let h='';
+ if(d.reply){const m=msgsOf(r.id).find(x=>x.id===d.reply);h=`<div class="ctx">${ic('reply','sm')}<span class="grow ell"><b>${esc(U(m?.from)?.name||'')}</b> に返信中　${esc((m?.text||'ファイル').slice(0,50))}</span><button class="ib sm" data-act="cancelCtx" aria-label="取消">${ic('x','sm')}</button></div>`}
+ else if(d.edit)h=`<div class="ctx">${ic('edit','sm')}<span class="grow">メッセージを編集中</span><button class="ib sm" data-act="cancelCtx" aria-label="取消">${ic('x','sm')}</button></div>`;b.innerHTML=h;updSend()}
+A.cancelCtx=()=>{const d=draftOf();if(d.edit){d.text='';$('#ta').value='';grow($('#ta'))}d.reply=null;d.edit=null;ctxBar()};
+function renderAtt(){const l=$('#attlist');if(!l)return;const d=draftOf();l.innerHTML=d.files.map(f=>`<div class="ctx" style="flex-wrap:wrap"><span class="fi" style="display:grid">${ic(f.type.startsWith('image/')?'image':f.type.startsWith('video/')?'video':'file','sm')}</span><span class="grow ell">${esc(f.name)} <span class="faint">${fmtSize(f.size)}</span></span>${f.err?'<span style="color:var(--danger)">失敗</span>':f.prog<100?`<span class="mono">${f.prog}%</span>`:ic('check','sm')}<button class="ib sm" data-act="rmFile" data-id="${f.id}" aria-label="削除">${ic('x','sm')}</button><div class="prog" style="width:100%"><i style="width:${f.prog}%"></i></div></div>`).join('');updSend()}
+A.rmFile=el=>{const d=draftOf();d.files=d.files.filter(f=>f.id!==el.dataset.id);Blobs.del(el.dataset.id);renderAtt()};
+A.attach=()=>{const fi=$('#fi');fi.value='';fi.onchange=()=>addFiles([...fi.files]);fi.click()};
+async function addFiles(list){const d=draftOf();for(const f of list){if(f.size>20*1048576){toast(f.name+' は20MBを超えています','err');continue}const ent={id:uid('f'),name:f.name,size:f.size,type:f.type||'application/octet-stream',prog:0};d.files.push(ent);renderAtt();
+ (async()=>{const n=clamp(Math.round(f.size/250000),6,18);for(let i=1;i<n;i++){ent.prog=Math.round(i/n*92);renderAtt();await sleep(40)}try{await Blobs.put(ent.id,f);ent.prog=100}catch(e){ent.err=true;toast('保存に失敗しました','err')}renderAtt()})()}}
+function bindDrop(el){let c=0;el.addEventListener('dragenter',e=>{if(e.dataTransfer?.types?.includes('Files')){c++;el.classList.add('dragging')}});el.addEventListener('dragover',e=>e.preventDefault());el.addEventListener('dragleave',()=>{if(--c<=0){c=0;el.classList.remove('dragging')}});el.addEventListener('drop',e=>{e.preventDefault();c=0;el.classList.remove('dragging');if(e.dataTransfer.files.length)addFiles([...e.dataTransfer.files])})}
+A.emojiPick=el=>{const m=menuAt(el,`<div class="emo" style="grid-template-columns:repeat(7,40px)">${EMOJI_ALL.map(e=>`<button data-e="${e}" style="width:40px;padding:0;justify-content:center;font-size:20px">${e}</button>`).join('')}</div>`,{right:true});m.style.minWidth='0';m.onclick=ev=>{const b=ev.target.closest('[data-e]');if(!b)return;const ta=document.activeElement===$('#threadTa')?$('#threadTa'):$('#ta');insertAt(ta,b.dataset.e)}};
+function insertAt(ta,t){const s=ta.selectionStart??ta.value.length,e=ta.selectionEnd??s;ta.value=ta.value.slice(0,s)+t+ta.value.slice(e);ta.selectionStart=ta.selectionEnd=s+t.length;ta.dispatchEvent(new Event('input'));ta.focus()}
+function onType(){const ta=$('#ta'),d=draftOf();d.text=ta.value;grow(ta);updSend();if(now()-CH.lastTypingSent>2000&&ta.value.trim()){CH.lastTypingSent=now();try{bc.postMessage({t:'typing',room:route.id,uid:me.id,name:me.name})}catch(e){}}}
+function onKey(e){const ac=$('#ac .on');if($('#ac button')){if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();const bs=$$('#ac button'),i=bs.findIndex(b=>b.classList.contains('on'));bs.forEach(b=>b.classList.remove('on'));bs[(i+(e.key==='ArrowDown'?1:-1)+bs.length)%bs.length].classList.add('on');return}if(e.key==='Enter'||e.key==='Tab'){e.preventDefault();(ac||$('#ac button')).click();return}if(e.key==='Escape'){$('#ac').innerHTML='';return}}
+ if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing&&!matchMedia('(pointer:coarse)').matches){e.preventDefault();A.send()}
+ if(e.key==='Escape'&&(draftOf().reply||draftOf().edit))A.cancelCtx()}
+function acCheck(){const ta=$('#ta');if(!ta)return;const pre=ta.value.slice(0,ta.selectionStart),m=pre.match(/(^|\s)@([a-z0-9_]*)$/);const box=$('#ac');if(!m){box.innerHTML='';return}
+ const r=curRoom(),q=m[2].toLowerCase();const list=roomMembers(r).map(U).filter(u=>u&&u.id!==me.id&&(u.handle.includes(q)||u.name.toLowerCase().includes(q))).slice(0,5);
+ box.innerHTML=list.length?`<div class="ac">${list.map((u,i)=>`<button class="${i?'':'on'}" data-act="acPick" data-h="${u.handle}">${av(u,'s24',false)}<b>${esc(u.name)}</b><span class="faint xs">@${u.handle}</span></button>`).join('')}</div>`:''}
+A.acPick=el=>{const ta=$('#ta'),pre=ta.value.slice(0,ta.selectionStart),post=ta.value.slice(ta.selectionStart);const np=pre.replace(/@([a-z0-9_]*)$/,'@'+el.dataset.h+' ');ta.value=np+post;ta.selectionStart=ta.selectionEnd=np.length;$('#ac').innerHTML='';ta.dispatchEvent(new Event('input'));ta.focus()};
+A.send=()=>{const r=curRoom();if(!r)return;const d=draftOf(),text=d.text.trim();if(!text&&!d.files.length)return;if(d.files.some(f=>f.prog<100&&!f.err)){toast('アップロード中です。少しお待ちください','info');return}
+ if(d.edit){const id=d.edit;tx(x=>{const m=msgsOf(r.id).find(z=>z.id===id);if(m&&m.from===me.id&&!m.del&&text){m.text=text;m.edited=true}});d.edit=null;d.text='';$('#ta').value='';grow($('#ta'));ctxBar();renderMsgs({noAnim:true});toast('編集しました');return}
+ const m={id:uid('m'),room:r.id,from:me.id,text,ts:now(),readBy:[me.id],reactions:{}};if(d.reply)m.replyTo=d.reply;const files=d.files.filter(f=>!f.err);if(files.length)m.files=files.map(f=>f.id);
+ d.text='';d.reply=null;const fl=d.files;d.files=[];$('#ta').value='';grow($('#ta'));ctxBar();renderAtt();
+ deliver(m,fl);$('#ta').focus()};
+function deliver(m,fl=[]){const r=db.rooms[m.room];
+ if(!navigator.onLine){CH.outbox.push({...m,_files:fl});jset(LS,'wc.outbox',CH.outbox.map(x=>({...x})));renderMsgs({bottom:true});toast('オフラインです。接続が戻ると再送できます','err');return}
+ CH.pending[m.id]=now()+700;
+ tx(d=>{fl.forEach(f=>d.files[f.id]={id:f.id,name:f.name,size:f.size,type:f.type,owner:me.id,room:m.room,ts:now()});msgsOf(m.room).push(m);
+  (m.text.match(/(^|\s)@([a-z0-9_]{3,16})\b/g)||[]).forEach(s=>{const u=findByHandle(s.trim());if(u&&u.id!==me.id&&canAccess(r,u.id))notify(u.id,{type:'mention',from:me.id,text:`${me.name}さんがあなたをメンションしました: ${m.text.slice(0,40)}`,room:r.id})})});
+ renderMsgs({bottom:true});setTimeout(()=>{delete CH.pending[m.id];updateStatus()},720);renderSide();botHook(r,m)}
+A.resend=el=>{const i=CH.outbox.findIndex(x=>x.id===el.dataset.id);if(i<0)return;if(!navigator.onLine)return toast('まだオフラインです','err');const [m]=CH.outbox.splice(i,1);jset(LS,'wc.outbox',CH.outbox);const fl=m._files||[];delete m._files;m.ts=now();deliver(m,fl)};
+addEventListener('online',()=>{if(CH.outbox.length){toast('接続が戻りました。未送信のメッセージを再送できます','info');if(route.n==='room')renderMsgs()}});
+function updateStatus(){$$('.m.me').forEach(el=>{const r=curRoom();if(!r)return;const m=msgsOf(r.id).find(x=>x.id===el.dataset.mid);const meta=$('.meta .st',el);if(m&&meta)meta.outerHTML=statusOf(m,r)})}
+function refreshRoomViews(){if(route.n==='room'){renderMsgs({noAnim:false});if(UIS.panel)panelHTML()}}
+/* ---- read + typing ---- */
+function markRead(){if(document.hidden||route.n!=='room')return;const r=curRoom();if(!r)return;if(!msgsOf(r.id).some(m=>!m.readBy.includes(me.id)))return;tx(d=>{msgsOf(r.id).forEach(m=>{if(!m.readBy.includes(me.id))m.readBy.push(me.id)})});renderRail();renderSide();renderTab()}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)markRead()});
+function updateTyping(){const el=$('#typing');if(!el||route.n!=='room')return;const t=CH.typing[route.id]||{};const names=Object.entries(t).filter(([u,x])=>x>now()&&u!==me.id).map(([u])=>U(u)?.name||'誰か');
+ el.innerHTML=names.length?`<span class="d"><i></i><i></i><i></i></span><span>${esc(names.slice(0,2).join('、'))}${names.length>2?' ほか':''}が入力中…</span>`:''}
+setInterval(()=>{updateTyping()},900);
+bc.onmessage=ev=>{const d=ev.data||{};if(!me)return;if(d.t==='typing'&&d.uid!==me.id){(CH.typing[d.room]||(CH.typing[d.room]={}))[d.uid]=now()+3500;updateTyping()}else if(d.t==='db'&&d.from!==TAB)onRemote()};
+/* ---- bot ---- */
+const BOT_REPLIES=['なるほど、いいですね。','それは面白そうです。もう少し詳しく聞かせてください。','了解です。','ありがとうございます。','そうなんですね。','別のタブでもう一つアカウントを作ると、人間の相手とも話せますよ。'];
+function botHook(r,m){if(!(r.type==='dm'&&r.members.includes(BOT)))return;const t=m.text||'';
+ setTimeout(()=>{tx(d=>{msgsOf(r.id).forEach(x=>{if(!x.readBy.includes(BOT))x.readBy.push(BOT)})});updateStatus()},900);
+ setTimeout(()=>{(CH.typing[r.id]||(CH.typing[r.id]={}))[BOT]=now()+1700;updateTyping()},1000);
+ setTimeout(()=>{let a;if(/こんにち|こんばん|おはよ|hello|hi/i.test(t))a=`こんにちは、${me.name}さん。ミオです。`;else if(/使い方|ヘルプ|help|機能/i.test(t))a='メッセージを右クリック（長押し）すると返信・スレッド・ピン留め・編集・削除ができます。右下の＋からグループも作れます。';else if(/ありがと/.test(t))a='どういたしまして。';else a=BOT_REPLIES[Math.floor(Math.random()*BOT_REPLIES.length)];
+  tx(d=>{msgsOf(r.id).push({id:uid('m'),room:r.id,from:BOT,text:a,ts:now(),readBy:[BOT],reactions:{}})});if(CH.typing[r.id])delete CH.typing[r.id][BOT];
+  if(route.n==='room'&&route.id===r.id){renderMsgs();markRead()}else{renderSide();renderRail();beep()}},2400)}
+/* ---- panel ---- */
+A.panel=el=>{const [k,t]=el.dataset.k.split(':');if(UIS.panel&&UIS.panel.k===k&&(!t||UIS.panel.tab===t)){UIS.panel=null}else UIS.panel={k,tab:t||'members'};renderPanel();syncShell();renderMainHeadState();if(UIS.panel&&UIS.panel.k==='search')setTimeout(()=>$('#psq')?.focus(),60)};
+function renderMainHeadState(){}
+A.closePanel=()=>{UIS.panel=null;renderPanel();syncShell()};
+A.thread=el=>{UIS.panel={k:'thread',id:el.dataset.id};renderPanel();syncShell();setTimeout(()=>$('#threadTa')?.focus(),80)};
+A.ptab=el=>{UIS.panel.tab=el.dataset.v;panelHTML()};
+function panelHTML(){const r=curRoom(),p=UIS.panel,box=$('#panel');if(!r||!p)return;
+ const head=t=>`<div class="top"><b class="grow">${t}</b><button class="ib" data-act="closePanel" aria-label="閉じる">${ic('x')}</button></div>`;
+ if(p.k==='thread'){const par=msgsOf(r.id).find(m=>m.id===p.id);if(!par||par.del){UIS.panel=null;return renderPanel()}const reps=msgsOf(r.id).filter(m=>m.thread===p.id&&!m.del);
+  const line=m=>`<div class="dl" style="margin:0;padding:8px 16px">${av(U(m.from),'s32',false)}<div class="c"><div class="hd"><b>${esc(U(m.from)?.name||'')}</b><span class="xs faint">${fmtT(m.ts)}</span></div>${fmt(m.text)}</div></div>`;
+  box.innerHTML=`${head('スレッド')}<div class="scroll grow" id="thrList"><div style="border-bottom:1px solid var(--line);padding-bottom:8px">${line(par)}</div><div class="xs faint" style="padding:8px 16px">${reps.length}件の返信</div>${reps.map(line).join('')}</div><div class="comp"><div class="compbox"><textarea id="threadTa" rows="1" placeholder="スレッドに返信" aria-label="スレッドに返信"></textarea><button class="ib send rdy" data-act="threadSend" aria-label="送信">${ic('send')}</button></div></div>`;
+  const ta=$('#threadTa');ta.addEventListener('input',()=>grow(ta));ta.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing&&!matchMedia('(pointer:coarse)').matches){e.preventDefault();A.threadSend()}});$('#thrList').scrollTop=1e6;return}
+ if(p.k==='search'){box.innerHTML=`${head('メッセージ検索')}<div style="padding:16px"><div class="search">${ic('search')}<input class="inp" id="psq" placeholder="このチャットを検索" autocomplete="off"></div></div><div class="scroll grow" id="psr"><div class="empty" style="padding:24px">キーワードを入力してください</div></div>`;
+  $('#psq').addEventListener('input',debounce(e=>{const q=e.target.value.trim().toLowerCase();const res=q?mainMsgs(r.id).concat(msgsOf(r.id).filter(m=>m.thread&&!m.del)).filter(m=>(m.text||'').toLowerCase().includes(q)).reverse().slice(0,50):[];
+   $('#psr').innerHTML=!q?'<div class="empty" style="padding:24px">キーワードを入力してください</div>':res.length?res.map(m=>`<button class="item" data-act="jump" data-id="${m.id}" style="align-items:flex-start">${av(U(m.from),'s32',false)}<span class="grow col" style="min-width:0"><span class="row"><b class="ell">${esc(U(m.from)?.name||'')}</b><span class="xs faint">${fmtD(m.ts)} ${fmtT(m.ts)}</span></span><span style="word-break:break-word">${esc(m.text).replace(new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','ig'),'<span class="mention">$1</span>')}</span></span></button>`).join(''):'<div class="empty" style="padding:24px">一致するメッセージはありません</div>'},180));return}
+ const tab=p.tab||'members',chan=r.type==='channel',s=chan?db.servers[r.server]:null,mem=roomMembers(r),owner=roomOwner(r);
+ let body='';
+ if(tab==='members'){body=`<div class="sec">メンバー — ${mem.length}</div>`+mem.map(id=>U(id)).filter(Boolean).sort((a,b)=>(pres(a.id)==='offline')-(pres(b.id)==='offline')).map(u=>`<div class="item" style="min-height:56px" data-act="profile" data-id="${u.id}" role="button" tabindex="0">${av(u,'s40')}<span class="grow col" style="min-width:0"><span class="row"><b class="ell">${esc(u.name)}</b>${u.id===owner?'<span class="tag">オーナー</span>':''}${u.bot?'<span class="tag">BOT</span>':''}</span><span class="xs mute">@${u.handle} · ${presLabel[pres(u.id)]}</span></span>${(owner===me.id||me.role==='admin')&&u.id!==me.id&&r.type!=='dm'?`<button class="ib sm" data-act="kick" data-id="${u.id}" data-tip="削除" aria-label="メンバーを削除">${ic('x','sm')}</button>`:''}</div>`).join('')+(r.type==='group'&&(owner===me.id)?`<div style="padding:16px"><button class="btn block" data-act="addMember">${ic('userPlus','sm')}メンバーを追加</button></div>`:'')+(r.type==='group'?`<div style="padding:0 16px 16px" class="col"><button class="btn block" data-act="renameGroup">${ic('edit','sm')}グループ名を変更</button></div>`:'')}
+ else if(tab==='pins'){const ps=r.pins.map(id=>msgsOf(r.id).find(m=>m.id===id)).filter(m=>m&&!m.del);body=ps.length?ps.map(m=>`<button class="item" data-act="jump" data-id="${m.id}" style="align-items:flex-start">${av(U(m.from),'s32',false)}<span class="grow col" style="min-width:0"><span class="row"><b class="ell">${esc(U(m.from)?.name||'')}</b><span class="xs faint">${fmtD(m.ts)}</span></span><span style="word-break:break-word">${esc(m.text||'ファイル')}</span></span></button>`).join(''):empty('pin','ピン留めはありません','大事なメッセージを長押しや右クリックでピン留めできます。');}
+ else{const fs=Object.values(db.files).filter(f=>f.room===r.id).sort((a,b)=>b.ts-a.ts);body=fs.length?`<div class="grid" style="grid-template-columns:repeat(2,1fr);padding:16px;gap:8px">${fs.map(f=>`<div class="fcard"><div class="pv" ${f.type.startsWith('image/')?`data-bg="${f.id}"`:''}>${f.type.startsWith('image/')?'':ic('file','lg')}</div><div style="padding:8px"><div class="ell xs">${esc(f.name)}</div><div class="xs faint">${fmtSize(f.size)}</div></div></div>`).join('')}</div>`:empty('folder','ファイルはありません','このチャットで送られた画像やファイルがここに並びます。')}
+ box.innerHTML=`${head(r.type==='dm'?'プロフィール':'チャット情報')}<div class="tabs">${[['members','メンバー'],['pins','ピン留め'],['files','ファイル']].map(([v,l])=>`<button class="${tab===v?'on':''}" data-act="ptab" data-v="${v}">${l}</button>`).join('')}</div><div class="scroll grow">${body}</div>`;
+ $$('[data-bg]',box).forEach(e=>fileURL(e.dataset.bg).then(u=>u&&(e.style.backgroundImage=`url(${u})`)))}
+A.threadSend=()=>{const ta=$('#threadTa'),t=ta.value.trim();if(!t)return;const r=curRoom(),pid=UIS.panel.id;const m={id:uid('m'),room:r.id,from:me.id,text:t,ts:now(),readBy:[me.id],reactions:{},thread:pid};tx(d=>{msgsOf(r.id).push(m);const par=msgsOf(r.id).find(x=>x.id===pid);if(par&&par.from!==me.id)notify(par.from,{type:'thread',from:me.id,text:`${me.name}さんがスレッドに返信しました: ${t.slice(0,30)}`,room:r.id})});ta.value='';grow(ta);panelHTML();renderMsgs({noAnim:true})};
+A.kick=el=>{const id=el.dataset.id,r=curRoom();confirmBox('メンバーを削除',`${U(id)?.name}さんを削除します。`,'削除',()=>{tx(d=>{if(r.type==='channel'){const s=d.servers[r.server];if(s.owner===me.id||me.role==='admin')s.members=s.members.filter(x=>x!==id)}else{const rr=d.rooms[r.id];if(rr.owner===me.id||me.role==='admin')rr.members=rr.members.filter(x=>x!==id)}notify(id,{type:'system',text:`${roomName(r)} から削除されました`})});toast('削除しました');panelHTML()})};
+A.addMember=()=>{const r=curRoom();const cands=(me.friends||[]).map(U).filter(u=>u&&!r.members.includes(u.id));const m=openModal(`<div class="h3" style="margin-bottom:16px">メンバーを追加</div>${cands.length?`<div class="col" style="max-height:320px;overflow:auto;margin-bottom:16px">${cands.map(u=>`<button class="item" data-pick="${u.id}">${av(u,'s32')}<span class="grow">${esc(u.name)}</span><span class="ic-slot"></span></button>`).join('')}</div>`:'<p class="mute" style="margin-bottom:16px">追加できるフレンドがいません。</p>'}<div class="row" style="justify-content:flex-end"><button class="btn" data-close>閉じる</button></div>`);
+ m.addEventListener('click',e=>{const b=e.target.closest('[data-pick]');if(!b)return;const id=b.dataset.pick;tx(d=>{const rr=d.rooms[r.id];if(!rr.members.includes(id)){rr.members.push(id);notify(id,{type:'system',text:`${me.name}さんが「${rr.name}」にあなたを追加しました`,room:rr.id})}});b.innerHTML=`${av(U(id),'s32')}<span class="grow">${esc(U(id).name)}</span>${ic('check','sm')}`;b.style.pointerEvents='none';panelHTML()})};
+A.renameGroup=()=>{const r=curRoom();const m=openModal(`<div class="h3" style="margin-bottom:16px">グループ名を変更</div><div class="field"><input class="inp" id="gn" value="${esc(r.name)}" maxlength="30"></div><div class="row" style="justify-content:flex-end"><button class="btn" data-close>キャンセル</button><button class="btn pri" id="gok">保存</button></div>`);m.querySelector('#gok').onclick=()=>{const v=m.querySelector('#gn').value.trim();if(!v)return;tx(d=>{d.rooms[r.id].name=v});m.close();toast('変更しました');renderAll('none')}};
+/* ===== screens ===== */
+const topbar=(title,extra='',lead=true)=>`<div class="top">${lead?`<button class="ib hd-only" data-act="drawer" aria-label="メニュー">${ic('menu')}</button>`:''}<b class="t grow ell">${title}</b>${extra}</div>`;
+const sub=(t)=>`<div class="sec" style="padding:24px 0 8px">${t}</div>`;
+/* ---- home ---- */
+R.home=el=>{const rooms=roomsOf(me.id).concat(Object.values(db.rooms).filter(r=>r.type==='channel'&&canAccess(r)));
+ const days=[...Array(7)].map((_,i)=>{const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-6+i);return d.getTime()});
+ const counts=days.map(s=>rooms.reduce((n,r)=>n+msgsOf(r.id).filter(m=>!m.del&&m.ts>=s&&m.ts<s+864e5).length,0)),mx=Math.max(1,...counts);
+ const myFiles=Object.values(db.files).filter(f=>f.owner===me.id),used=myFiles.reduce((a,f)=>a+f.size,0),QUOTA=100*1048576,pct=Math.min(1,used/QUOTA);
+ const stats=[['未読',totalUnread()],['フレンド',(me.friends||[]).filter(x=>x!==BOT).length],['チャット',visibleRooms().length],['今日の投稿',counts[6]]];
+ const dow='日月火水木金土';
+ el._after=()=>{$$('.stat b',el).forEach(b=>countUp(b,+b.dataset.n));setTimeout(()=>{$$('.bars i',el).forEach(i=>i.style.height=i.dataset.h);const f=$('.donut .fg',el);if(f)f.style.strokeDashoffset=f.dataset.off},120);attachPTR($('#pg'),()=>{onRemote(true);toast('最新の状態です')})};
+ const hr=new Date().getHours(),greet=hr<5?'こんばんは':hr<11?'おはようございます':hr<18?'こんにちは':'こんばんは';
+ return `${topbar('ホーム')}<div class="page scroll" id="pg"><div class="in"><div class="h1" style="margin-bottom:8px">${kin(greet+'、'+me.name+'さん')}</div><p class="mute" style="margin-bottom:24px">${new Date().getMonth()+1}月${new Date().getDate()}日（${dow[new Date().getDay()]}）</p>
+ <div class="grid stats">${stats.map(([l,n])=>`<div class="stat reveal"><span class="xs mute">${l}</span><b data-n="${n}">0</b></div>`).join('')}</div>
+ <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr));margin-top:16px">
+ <div class="card reveal"><div class="row" style="margin-bottom:24px"><b class="grow">この7日間の投稿</b><span class="xs mute">全${counts.reduce((a,b)=>a+b,0)}件</span></div><div class="bars">${counts.map((c,i)=>`<div class="${i===6?'today':''}"><span class="xs mute">${c}</span><i data-h="${Math.max(4,Math.round(c/mx*80))}px"></i><span class="xs faint">${dow[new Date(days[i]).getDay()]}</span></div>`).join('')}</div></div>
+ <div class="card reveal"><b>ファイルの使用量</b><div class="row" style="gap:24px;margin-top:16px"><svg class="donut" viewBox="0 0 40 40"><circle class="bg" cx="20" cy="20" r="16" /><circle class="fg" cx="20" cy="20" r="16" stroke-dasharray="100.5" stroke-dashoffset="100.5" data-off="${(100.5*(1-pct)).toFixed(1)}" /></svg><div class="col"><b class="h2 mono">${fmtSize(used)}</b><span class="xs mute">上限 100 MB ・ ${myFiles.length}個</span></div></div></div></div>
+ ${sub('最近のチャット')}<div class="col reveal">${visibleRooms().slice(0,6).map(chatItem).join('')||empty('chat','チャットはまだありません','右下の＋ボタンからフレンドとチャットを始めましょう。')}</div></div></div>
+ <div class="fab" id="fab"><button class="f" data-act="fabOpen" aria-label="新しいチャット" style="width:100%;height:100%">${ic('plus','lg')}</button><div class="p" id="fabp"></div></div>`};
+const FAB={sel:new Set()};
+A.fabOpen=()=>{const f=$('#fab');f.classList.add('open');fabRender()};
+A.fabClose=()=>{$('#fab')?.classList.remove('open');FAB.sel.clear()};
+function fabRender(){const fr=(me.friends||[]).map(U).filter(u=>u&&!u.bot||u&&u.bot);const n=FAB.sel.size;
+ $('#fabp').innerHTML=`<div class="row" style="margin-bottom:8px"><b class="grow h3">新しいチャット</b><button class="ib sm" data-act="fabClose" aria-label="閉じる">${ic('x')}</button></div>${fr.length?fr.map(u=>`<button class="item" data-act="fabPick" data-id="${u.id}" style="min-height:48px;padding:4px 8px">${av(u,'s32')}<span class="grow ell">${esc(u.name)}</span><span class="ib sm" style="${FAB.sel.has(u.id)?'color:var(--accent)':'opacity:.2'}">${ic('check','sm')}</span></button>`).join(''):'<p class="mute" style="padding:16px 0">フレンドがいません。フレンドを追加するとここから会話を始められます。</p><button class="btn block" data-act="nav" data-n="friends">フレンドを探す</button>'}
+ ${n>1?`<div class="field" style="margin:16px 0 0"><label for="gname">グループ名</label><input class="inp" id="gname" maxlength="30" placeholder="例：週末の予定"></div>`:''}${n?`<button class="btn pri block" style="margin-top:16px" data-act="fabGo">${n>1?'グループを作成':'チャットを開く'}</button>`:''}`}
+A.fabPick=el=>{const id=el.dataset.id;FAB.sel.has(id)?FAB.sel.delete(id):FAB.sel.add(id);const g=$('#gname')?.value;fabRender();if(g&&$('#gname'))$('#gname').value=g};
+A.fabGo=()=>{const ids=[...FAB.sel];let rid;if(ids.length===1){tx(d=>{rid=ensureDM(me.id,ids[0]).id;const r=d.rooms[rid];if(r.hidden)delete r.hidden[me.id]})}else{const name=($('#gname').value.trim()||ids.slice(0,3).map(i=>U(i).name).join('、')).slice(0,30);tx(d=>{rid=uid('r');d.rooms[rid]={id:rid,type:'group',name,members:[me.id,...ids],owner:me.id,pins:[],muted:{},created:now()};d.msgs[rid]=[{id:uid('m'),room:rid,from:BOT,text:'',ts:now(),readBy:[BOT],reactions:{},del:true}];ids.forEach(i=>notify(i,{type:'system',text:`${me.name}さんが「${name}」に招待しました`,room:rid}))});toast('グループを作成しました')}FAB.sel.clear();go('room',{id:rid})};
+/* ---- friends ---- */
+const FR={tab:'online',q:''};
+R.friends=el=>{const fr=(me.friends||[]).map(U).filter(Boolean),on=fr.filter(u=>pres(u.id)!=='offline'),req=(me.reqIn||[]).length;
+ const list=FR.tab==='online'?on:fr;
+ el._after=()=>{const s=$('#frSeg');segInit(s,v=>{FR.tab=v;renderMain('none')});const q=$('#frq');if(q){q.focus();q.addEventListener('input',debounce(()=>{FR.q=q.value;drawAdd()},100));drawAdd()}};
+ const row=u=>`<div class="item reveal" style="min-height:64px" role="button" data-act="profile" data-id="${u.id}" tabindex="0">${av(u,'s48')}<span class="grow col" style="min-width:0"><b class="ell">${esc(u.name)}</b><span class="xs mute">${u.bot?'ボット':presLabel[pres(u.id)]} ・ @${u.handle}</span></span><button class="ib" data-act="dm" data-id="${u.id}" data-tip="メッセージ" aria-label="メッセージ">${ic('chat')}</button>${u.bot?'':`<button class="ib" data-act="friendMenu" data-id="${u.id}" data-menu aria-label="その他">${ic('more')}</button>`}</div>`;
+ let body='';
+ if(FR.tab==='online'||FR.tab==='all')body=list.length?`<div class="xs faint" style="padding:8px 16px">${FR.tab==='online'?'オンライン':'すべてのフレンド'} — ${list.length}</div>`+list.map(row).join(''):empty('users',FR.tab==='online'?'オンラインのフレンドはいません':'フレンドはまだいません','「追加」からハンドル名で検索して申請できます。別タブで作ったアカウントにも申請できます。',`<button class="btn pri" data-act="frTab" data-v="add">フレンドを追加</button>`);
+ else if(FR.tab==='req'){const inn=(me.reqIn||[]).map(U).filter(Boolean),out=(me.reqOut||[]).map(U).filter(Boolean);body=(inn.length?`<div class="xs faint" style="padding:8px 16px">受信 — ${inn.length}</div>`+inn.map(u=>`<div class="item" style="min-height:64px">${av(u,'s48')}<span class="grow col" style="min-width:0"><b class="ell">${esc(u.name)}</b><span class="xs mute">@${u.handle}</span></span><button class="btn sm pri" data-act="accept" data-id="${u.id}">承認</button><button class="btn sm" data-act="decline" data-id="${u.id}">拒否</button></div>`).join(''):'')+(out.length?`<div class="xs faint" style="padding:16px 16px 8px">送信済み — ${out.length}</div>`+out.map(u=>`<div class="item" style="min-height:64px">${av(u,'s48')}<span class="grow col"><b class="ell">${esc(u.name)}</b><span class="xs mute">承認待ち</span></span><button class="btn sm" data-act="cancelReq" data-id="${u.id}">取り消し</button></div>`).join(''):'')||empty('userPlus','申請はありません','受け取った申請と送った申請がここに表示されます。')}
+ else body=`<div style="padding:8px 16px 16px"><div class="field" style="margin-bottom:8px"><label for="frq">名前またはハンドル名で検索</label><div class="search">${ic('search')}<input class="inp" id="frq" placeholder="例：@sakura" autocomplete="off" value="${esc(FR.q)}"></div></div></div><div id="addRes"></div>`;
+ return `${topbar('フレンド')}<div class="tabs" style="padding:0 16px"><div class="row" style="padding:8px 0;overflow-x:auto">${segHTML('frSeg',[['online','オンライン'],['all','すべて'],['req','申請中'+(req?` ${req}`:'')],['add','追加']],FR.tab)}</div></div><div class="page scroll"><div class="in" style="margin:0;max-width:720px;padding:0">${body}</div></div>`};
+A.frTab=el=>{FR.tab=el.dataset.v;renderMain('none')};
+function drawAdd(){const q=FR.q.trim().replace(/^@/,'').toLowerCase(),box=$('#addRes');if(!box)return;
+ const c=Object.values(db.users).filter(u=>u.id!==me.id&&!u.bot&&q&&(u.handle.includes(q)||u.name.toLowerCase().includes(q))).slice(0,8);
+ box.innerHTML=!q?empty('search','ユーザーを探す','名前かハンドル名を入力すると候補が表示されます。'):c.length?c.map(u=>{const st=me.friends.includes(u.id)?'フレンド':me.reqOut.includes(u.id)?'申請中':me.reqIn.includes(u.id)?'承認する':'';return `<div class="item" style="min-height:64px">${av(u,'s48')}<span class="grow col" style="min-width:0"><b class="ell">${esc(u.name)}</b><span class="xs mute">@${u.handle}</span></span>${st==='フレンド'||st==='申請中'?`<span class="xs mute">${st}</span>`:st?`<button class="btn sm pri" data-act="accept" data-id="${u.id}">承認</button>`:`<button class="btn sm pri" data-act="reqSend" data-id="${u.id}">${ic('userPlus','sm')}申請</button>`}</div>`}).join(''):empty('users','見つかりませんでした','ハンドル名のつづりを確認してください。')}
+A.reqSend=el=>{const id=el.dataset.id;tx(d=>{const a=d.users[me.id],b=d.users[id];if(!b||a.friends.includes(id)||a.reqOut.includes(id))return;a.reqOut.push(id);b.reqIn.push(me.id);notify(id,{type:'friend',from:me.id,text:`${me.name}さんからフレンド申請が届きました`})});toast('申請を送りました');el.outerHTML='<span class="xs mute">申請中</span>';renderSide();renderTab()};
+A.accept=el=>{const id=el.dataset.id;tx(d=>{const a=d.users[me.id],b=d.users[id];a.reqIn=a.reqIn.filter(x=>x!==id);b.reqOut=b.reqOut.filter(x=>x!==me.id);if(!a.friends.includes(id))a.friends.push(id);if(!b.friends.includes(me.id))b.friends.push(me.id);notify(id,{type:'friend',from:me.id,text:`${me.name}さんがフレンド申請を承認しました`})});burstEl(el,18);toast(U(id).name+'さんとフレンドになりました');renderAll('none')};
+A.decline=el=>{const id=el.dataset.id;tx(d=>{d.users[me.id].reqIn=d.users[me.id].reqIn.filter(x=>x!==id);d.users[id].reqOut=d.users[id].reqOut.filter(x=>x!==me.id)});renderAll('none')};
+A.cancelReq=el=>{const id=el.dataset.id;tx(d=>{d.users[me.id].reqOut=d.users[me.id].reqOut.filter(x=>x!==id);d.users[id].reqIn=d.users[id].reqIn.filter(x=>x!==me.id)});renderAll('none')};
+A.friendMenu=el=>{const id=el.dataset.id;const m=menuAt(el,`<button data-act="profile" data-id="${id}">${ic('user')}プロフィール</button><hr><button class="danger" data-act="unfriend" data-id="${id}">${ic('x')}フレンドを削除</button>`,{right:true});m.addEventListener('click',e=>{if(e.target.closest('button'))m.remove()})};
+A.unfriend=el=>{const id=el.dataset.id;confirmBox('フレンドを削除',`${U(id).name}さんをフレンドから削除します。`,'削除',()=>{tx(d=>{d.users[me.id].friends=d.users[me.id].friends.filter(x=>x!==id);d.users[id].friends=d.users[id].friends.filter(x=>x!==me.id)});toast('削除しました');renderAll('none')})};
+A.dm=el=>{let rid;tx(d=>{rid=ensureDM(me.id,el.dataset.id).id;const r=d.rooms[rid];if(r.hidden)delete r.hidden[me.id]});go('room',{id:rid})};
+/* ---- servers ---- */
+R.servers=el=>{const all=Object.values(db.servers);el._after=()=>segInit($('#commSeg'),v=>{if(v!=='servers')go(v)});
+ return `${topbar('コミュニティ',`<button class="btn sm pri" data-act="addServer">${ic('plus','sm')}作成・参加</button>`)}<div class="page scroll"><div class="in">${commSwitch('servers')}<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(256px,1fr))">${all.map(s=>{const joined=s.members.includes(me.id);return `<div class="card reveal col" style="padding:24px;gap:16px"><div class="row"><span class="av s48 sq t${s.name.length%5}">${esc([...s.name][0])}</span><div class="grow col" style="min-width:0"><b class="ell">${esc(s.name)}</b><span class="xs mute">${s.members.length}人 ・ ${s.cats.reduce((n,c)=>n+c.rooms.length,0)}チャンネル</span></div></div><p class="mute" style="flex:1;min-height:48px">${esc(s.desc||'説明はありません')}</p>${joined?`<button class="btn block" data-act="server" data-id="${s.id}">開く</button>`:`<button class="btn pri block" data-act="joinServer" data-id="${s.id}">参加する</button>`}</div>`}).join('')}</div></div></div>`};
+R.server=el=>{const s=db.servers[route.sid];if(!s||!s.members.includes(me.id)){setTimeout(()=>go('servers',{},{replace:1}));return ''}
+ return `${topbar(esc(s.name),`<button class="ib" data-act="serverMenu" data-id="${s.id}" data-menu aria-label="メニュー">${ic('more')}</button>`)}<div class="page scroll"><div class="in" style="max-width:640px"><p class="mute" style="margin-bottom:16px">${esc(s.desc||'')}</p>${s.cats.map(c=>`${sub(esc(c.name))}${c.rooms.map(id=>db.rooms[id]).filter(Boolean).map(r=>{const n=unreadOf(r);return `<button class="item reveal" data-act="room" data-id="${r.id}">${ic('hash')}<span class="grow ell" style="font-weight:${n?700:400}">${esc(r.name)}</span><span class="xs faint ell" style="max-width:40%">${esc(r.topic||'')}</span>${n?`<span class="badge">${n}</span>`:''}</button>`}).join('')}`).join('')}</div></div>`};
+A.server=el=>{const s=db.servers[el.dataset.id];if(!s)return;const first=s.cats.flatMap(c=>c.rooms).find(id=>db.rooms[id]);if(innerWidth>820&&first)go('room',{id:first});else go('server',{sid:s.id})};
+A.joinServer=el=>{const id=el.dataset.id;tx(d=>{const s=d.servers[id];if(s&&!s.members.includes(me.id)){s.members.push(me.id);if(s.owner!==BOT)notify(s.owner,{type:'system',text:`${me.name}さんが「${s.name}」に参加しました`})}});toast('参加しました');burstEl(el,16);setTimeout(()=>go('server',{sid:id},{replace:1}),300)};
+A.addServer=()=>{const m=openModal(`<div class="h3" style="margin-bottom:16px">サーバー</div>${segHTML('svSeg',[['new','作成'],['join','招待コードで参加']],'new')}<div id="svBody" style="margin-top:24px"></div>`);
+ const draw=v=>{m.querySelector('#svBody').innerHTML=v==='new'?`<div class="field"><label for="svn">サーバー名</label><input class="inp" id="svn" maxlength="30" placeholder="例：写真部"><div class="err" id="sve"></div></div><div class="field"><label for="svd">説明（任意）</label><input class="inp" id="svd" maxlength="80"></div><div class="row" style="justify-content:flex-end"><button class="btn" data-close>キャンセル</button><button class="btn pri" id="svok">作成</button></div>`:`<div class="field"><label for="svc">招待コード</label><input class="inp mono" id="svc" placeholder="sv_..."><div class="err" id="sve"></div></div><div class="row" style="justify-content:flex-end"><button class="btn" data-close>キャンセル</button><button class="btn pri" id="svok">参加</button></div>`;
+  m.querySelector('#svok').onclick=()=>{const e=m.querySelector('#sve');if(v==='new'){const n=m.querySelector('#svn').value.trim();if(!n){e.textContent='サーバー名を入力してください';return}let sid;tx(d=>{sid=uid('sv_');const r1=uid('r'),r2=uid('r');d.rooms[r1]={id:r1,type:'channel',server:sid,name:'一般',topic:'みんなで話す場所',pins:[],muted:{},created:now()};d.rooms[r2]={id:r2,type:'channel',server:sid,name:'雑談',topic:'',pins:[],muted:{},created:now()};d.msgs[r1]=[];d.msgs[r2]=[];d.servers[sid]={id:sid,name:n,desc:m.querySelector('#svd').value.trim(),owner:me.id,members:[me.id],cats:[{id:uid('c'),name:'テキストチャンネル',rooms:[r1,r2]}],created:now()}});m.close();toast('サーバーを作成しました');setTimeout(()=>A.server({dataset:{id:sid}}),200)}
+  else{const c=m.querySelector('#svc').value.trim();const s=db.servers[c];if(!s){e.textContent='そのコードのサーバーが見つかりません';m.querySelector('#svc').classList.add('bad');return}if(s.members.includes(me.id)){e.textContent='すでに参加しています';return}A.joinServer({dataset:{id:c}});m.close()}}};
+ draw('new');segInit(m.querySelector('#svSeg'),draw)};
+A.serverMenu=el=>{const s=db.servers[el.dataset.id],own=s.owner===me.id;const m=menuAt(el,`<button data-act="copyCode" data-id="${s.id}">${ic('copy')}招待コードをコピー</button>${own?`<button data-act="addChannel" data-id="${s.id}">${ic('plus')}チャンネルを追加</button><button data-act="manageCh" data-id="${s.id}">${ic('hash')}チャンネルを管理</button><button data-act="renameServer" data-id="${s.id}">${ic('edit')}サーバー名を変更</button><hr>${s.id!==SYS_SV?`<button class="danger" data-act="delServer" data-id="${s.id}">${ic('trash')}サーバーを削除</button>`:''}`:`<hr><button class="danger" data-act="leaveServer" data-id="${s.id}">${ic('logout')}サーバーから退出</button>`}`,{right:true});m.addEventListener('click',e=>{if(e.target.closest('button'))m.remove()})};
+A.copyCode=el=>copyText(el.dataset.id);
+A.addChannel=el=>{const sid=el.dataset.id,cat=el.dataset.cat;const m=openModal(`<div class="h3" style="margin-bottom:16px">チャンネルを追加</div><div class="field"><label for="chn">チャンネル名</label><input class="inp" id="chn" maxlength="24"><div class="err" id="che"></div></div><div class="row" style="justify-content:flex-end"><button class="btn" data-close>キャンセル</button><button class="btn pri" id="chok">追加</button></div>`);
+ m.querySelector('#chok').onclick=()=>{const n=m.querySelector('#chn').value.trim();if(!n){m.querySelector('#che').textContent='名前を入力してください';return}let rid;tx(d=>{const s=d.servers[sid];if(s.owner!==me.id)return;rid=uid('r');d.rooms[rid]={id:rid,type:'channel',server:sid,name:n,topic:'',pins:[],muted:{},created:now()};d.msgs[rid]=[];(s.cats.find(c=>c.id===cat)||s.cats[0]).rooms.push(rid)});m.close();toast('追加しました');renderAll('none')}};
+A.manageCh=el=>{const s=db.servers[el.dataset.id];const m=openModal(`<div class="h3" style="margin-bottom:16px">チャンネルを管理</div><div id="mch">${s.cats.flatMap(c=>c.rooms).map(id=>db.rooms[id]).filter(Boolean).map(r=>`<div class="item" style="min-height:48px">${ic('hash')}<span class="grow ell">${esc(r.name)}</span><button class="ib sm" data-del="${r.id}" aria-label="削除">${ic('trash','sm')}</button></div>`).join('')}</div><div class="row" style="justify-content:flex-end;margin-top:16px"><button class="btn" data-close>閉じる</button></div>`);
+ m.addEventListener('click',e=>{const b=e.target.closest('[data-del]');if(!b)return;const id=b.dataset.del;const total=s.cats.flatMap(c=>c.rooms).length;if(total<=1)return toast('最後のチャンネルは削除できません','err');tx(d=>{const ss=d.servers[s.id];if(ss.owner!==me.id)return;ss.cats.forEach(c=>c.rooms=c.rooms.filter(x=>x!==id));delete d.rooms[id];delete d.msgs[id]});b.closest('.item').remove();if(route.n==='room'&&route.id===id)go('server',{sid:s.id},{replace:1});else renderAll('none')})};
+A.renameServer=el=>{const s=db.servers[el.dataset.id];const m=openModal(`<div class="h3" style="margin-bottom:16px">サーバー名を変更</div><div class="field"><input class="inp" id="rn" value="${esc(s.name)}" maxlength="30" aria-label="サーバー名"></div><div class="row" style="justify-content:flex-end"><button class="btn" data-close>キャンセル</button><button class="btn pri" id="rok">保存</button></div>`);m.querySelector('#rok').onclick=()=>{const v=m.querySelector('#rn').value.trim();if(!v)return;tx(d=>{if(d.servers[s.id].owner===me.id)d.servers[s.id].name=v});m.close();renderAll('none')}};
+A.delServer=el=>{const s=db.servers[el.dataset.id];confirmBox('サーバーを削除',`「${s.name}」とすべてのメッセージを削除します。`,'削除',()=>{tx(d=>{const sv=d.servers[s.id];if(sv.owner!==me.id)return;sv.cats.forEach(c=>c.rooms.forEach(id=>{delete d.rooms[id];delete d.msgs[id]}));delete d.servers[s.id]});toast('削除しました');go('home',{},{replace:1})})};
+A.leaveServer=el=>{const s=db.servers[el.dataset.id];confirmBox('サーバーから退出',`「${s.name}」から退出します。`,'退出',()=>{tx(d=>{d.servers[s.id].members=d.servers[s.id].members.filter(x=>x!==me.id)});toast('退出しました');go('home',{},{replace:1})})};
+/* ---- notifications ---- */
+const NI={message:'chat',mention:'hash',reaction:'smile',friend:'userPlus',system:'info',thread:'thread'};
+R.notifs=el=>{const ns=db.notifs[me.id]||[];el._after=()=>setTimeout(()=>{if(route.n==='notifs'&&unreadNotif()){tx(d=>(d.notifs[me.id]||[]).forEach(n=>n.read=true));renderSide();renderTab();renderRail()}},2200);
+ return `${topbar('通知',`<button class="btn sm ghost" data-act="notifClear" ${ns.length?'':'disabled'}>${ic('trash','sm')}すべて削除</button>`)}<div class="page scroll"><div class="in" style="max-width:640px">${ns.length?ns.map(n=>`<button class="item reveal" data-act="notifGo" data-id="${n.id}" style="align-items:flex-start;${n.read?'':'background:color-mix(in srgb,var(--accent) 8%,transparent)'}"><span class="ib" style="background:var(--bg3)">${ic(NI[n.type]||'bell')}</span><span class="grow col"><span>${esc(n.text)}</span><span class="xs faint">${fmtRel(n.ts)}</span></span>${n.read?'':'<i class="dot online" style="position:static;margin-top:8px"></i>'}</button>`).join(''):empty('bell','通知はありません','メンション、リアクション、フレンド申請などがここに届きます。')}</div></div>`};
+A.notifGo=el=>{const n=(db.notifs[me.id]||[]).find(x=>x.id===el.dataset.id);if(!n)return;tx(d=>{const x=(d.notifs[me.id]||[]).find(z=>z.id===n.id);if(x)x.read=true});if(n.room&&db.rooms[n.room]&&canAccess(db.rooms[n.room]))go('room',{id:n.room});else if(n.type==='friend')go('friends');else renderAll('none')};
+A.notifClear=()=>{tx(d=>{d.notifs[me.id]=[]});renderAll('none')};
+/* ---- search ---- */
+const SQ={q:'',t:'all'};
+R.search=el=>{el._after=()=>{const i=$('#gq');i.focus();i.addEventListener('input',debounce(()=>{SQ.q=i.value;drawSearch()},120));segInit($('#sqSeg'),v=>{SQ.t=v;drawSearch()});drawSearch()};
+ return `${topbar('検索')}<div class="page scroll"><div class="in" style="max-width:720px"><div class="search">${ic('search')}<input class="inp" id="gq" placeholder="メッセージ、ユーザー、チャンネルを検索" autocomplete="off" value="${esc(SQ.q)}" aria-label="検索"></div><div style="margin:16px 0;overflow-x:auto">${segHTML('sqSeg',[['all','すべて'],['msg','メッセージ'],['user','ユーザー'],['room','チャンネル']],SQ.t)}</div><div id="sr"></div></div></div>`};
+function drawSearch(){const q=SQ.q.trim().toLowerCase(),box=$('#sr');if(!box)return;if(!q){box.innerHTML=empty('search','何をお探しですか？','入力すると、その場で結果が絞り込まれます。');return}
+ const re=new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','ig'),hl=t=>esc(t).replace(re,'<span class="mention">$1</span>');
+ const users=Object.values(db.users).filter(u=>!u.bot&&(u.name.toLowerCase().includes(q)||u.handle.includes(q))).slice(0,6),
+ rooms=Object.values(db.rooms).filter(r=>canAccess(r)&&r.type!=='dm'&&r.name.toLowerCase().includes(q)).slice(0,6),
+ accessible=Object.values(db.rooms).filter(r=>canAccess(r)),msgs=[];for(const r of accessible)for(const m of msgsOf(r.id))if(!m.del&&(m.text||'').toLowerCase().includes(q))msgs.push(m);msgs.sort((a,b)=>b.ts-a.ts);
+ let h='';const T=SQ.t;
+ if((T==='all'||T==='user')&&users.length)h+=`<div class="sec" style="padding-left:0">ユーザー</div>`+users.map(u=>`<button class="item" data-act="profile" data-id="${u.id}">${av(u,'s40')}<span class="grow col"><b>${hl(u.name)}</b><span class="xs mute">@${hl(u.handle)}</span></span></button>`).join('');
+ if((T==='all'||T==='room')&&rooms.length)h+=`<div class="sec" style="padding-left:0">チャンネル・グループ</div>`+rooms.map(r=>`<button class="item" data-act="room" data-id="${r.id}">${roomAv(r,'s40')}<span class="grow col"><b>${hl(r.name)}</b><span class="xs mute">${r.type==='channel'?esc(db.servers[r.server].name):'グループ'}</span></span></button>`).join('');
+ if((T==='all'||T==='msg')&&msgs.length)h+=`<div class="sec" style="padding-left:0">メッセージ — ${msgs.length}件</div>`+msgs.slice(0,30).map(m=>{const r=db.rooms[m.room];return `<button class="item" data-act="goMsg" data-id="${m.id}" data-room="${r.id}" style="align-items:flex-start">${av(U(m.from),'s40',false)}<span class="grow col" style="min-width:0"><span class="row"><b class="ell">${esc(U(m.from)?.name||'')}</b><span class="xs faint ell">${esc(roomName(r))} ・ ${fmtD(m.ts)}</span></span><span style="word-break:break-word">${hl(m.text.slice(0,140))}</span></span></button>`}).join('');
+ box.innerHTML=h||empty('search','見つかりませんでした','別のキーワードを試してください。')}
+A.goMsg=el=>{go('room',{id:el.dataset.room});setTimeout(()=>jumpTo(el.dataset.id),420)};
+/* ---- profile ---- */
+R.profile=el=>{const u=U(route.id||me.id);if(!u){setTimeout(()=>go('home',{},{replace:1}));return ''}const self=u.id===me.id,fr=me.friends.includes(u.id);
+ el._after=()=>{if(!self)return;const f=$('#pf');const fi=$('#pfimg');fi.onchange=async()=>{const file=fi.files[0];if(!file)return;try{const b=await resizeImg(file);const id=uid('a');await Blobs.put(id,b);const old=me.avatar;tx(d=>{d.users[me.id].avatar=id});if(old)Blobs.del(old);toast('アイコンを更新しました');renderAll('none')}catch(e){toast('画像を読み込めませんでした','err')}};
+  f.onsubmit=e=>{e.preventDefault();const n=$('#pfn').value.trim();if(!n||n.length>20){$('#pfe').textContent='名前は1〜20文字で入力してください';$('#pfn').classList.add('bad','shake');setTimeout(()=>$('#pfn').classList.remove('shake'),400);return}tx(d=>{d.users[me.id].name=n;d.users[me.id].bio=$('#pfb').value.trim().slice(0,120);d.users[me.id].tone=+$('#pft').dataset.v});toast('プロフィールを保存しました');renderAll('none')}};
+ const st=pres(u.id);
+ return `${topbar(self?'プロフィール':esc(u.name))}<div class="page scroll"><div class="in" style="max-width:640px"><div class="card reveal" style="text-align:center;padding:32px"><div style="display:inline-block">${av(u,'s96')}</div><div class="h2" style="margin-top:16px">${esc(u.name)}</div><div class="mute">@${u.handle}${u.role==='admin'?' <span class="tag">管理者</span>':''}${u.bot?' <span class="tag">BOT</span>':''}</div><p style="margin:16px auto 0;max-width:420px">${esc(u.bio||'自己紹介はまだありません。')}</p><div class="xs faint" style="margin-top:16px">${presLabel[st]} ・ ${new Date(u.created).getFullYear()}年${new Date(u.created).getMonth()+1}月から利用</div>
+ ${self?'':`<div class="row" style="justify-content:center;margin-top:24px"><button class="btn pri" data-act="dm" data-id="${u.id}">${ic('chat','sm')}メッセージ</button>${u.bot?'':fr?`<button class="btn" data-act="unfriend" data-id="${u.id}">フレンド削除</button>`:me.reqOut.includes(u.id)?'<button class="btn" disabled>申請中</button>':`<button class="btn" data-act="reqSend" data-id="${u.id}">${ic('userPlus','sm')}フレンド申請</button>`}</div>`}</div>
+ ${self?`${sub('プロフィールを編集')}<form class="card reveal" id="pf" novalidate><div class="row" style="margin-bottom:24px"><button type="button" class="btn" data-act="pickAvatar">${ic('image','sm')}アイコンを変更</button>${u.avatar?`<button type="button" class="btn ghost" data-act="rmAvatar">削除</button>`:''}<input type="file" id="pfimg" accept="image/*" hidden></div><div class="field"><label for="pfn">表示名</label><input class="inp" id="pfn" value="${esc(u.name)}" maxlength="20"><div class="err" id="pfe"></div></div><div class="field"><label for="pfb">自己紹介</label><textarea id="pfb" rows="3" maxlength="120" style="padding:8px 12px;resize:vertical">${esc(u.bio||'')}</textarea></div><div class="field"><label>アイコンの濃さ</label><div class="row" id="pft" data-v="${u.tone}">${[0,1,2,3,4].map(i=>`<button type="button" data-act="tone" data-v="${i}" class="av s40 t${i}" style="${i===(u.tone??0)?'outline:2px solid var(--accent);outline-offset:2px':''}" aria-label="濃さ${i+1}">${esc([...u.name][0])}</button>`).join('')}</div></div><div class="field"><label>ステータス</label>${selHTML('pfs',[['online','オンライン'],['away','離席中'],['invisible','オフライン表示']],u.status||'online')}</div><button class="btn pri" type="submit">保存</button></form>`:''}</div></div>`};
+A.pickAvatar=()=>$('#pfimg').click();
+A.rmAvatar=()=>{const old=me.avatar;tx(d=>{d.users[me.id].avatar=null});if(old)Blobs.del(old);renderAll('none')};
+A.tone=el=>{const t=$('#pft');t.dataset.v=el.dataset.v;$$('button',t).forEach(b=>b.style.outline=b===el?'2px solid var(--accent)':'');};
+A.profile=el=>{go('profile',{id:el.dataset.id})};
+function setStatus(v){tx(d=>{d.users[me.id].status=v});beat();renderRail();toast('ステータスを変更しました')}
+/* ---- user settings ---- */
+R.settings=el=>{el._after=()=>{selInit($('#nsel'),[['all','すべてのメッセージ'],['mention','メンションとDMのみ'],['none','通知しない']],v=>{tx(d=>{d.users[me.id].settings.notif=v});toast('通知設定を保存しました')});
+  $('#pwf').onsubmit=async e=>{e.preventDefault();const c=$('#pw0').value,n=$('#pw1').value,k=$('#pw2').value,er=$('#pwe');er.textContent='';if(await hash(c,me.salt)!==me.hash){er.textContent='現在のパスワードが違います';return}if(n.length<8){er.textContent='新しいパスワードは8文字以上にしてください';return}if(n!==k){er.textContent='確認用のパスワードが一致しません';return}const h=await hash(n,me.salt);tx(d=>{d.users[me.id].hash=h});e.target.reset();toast('パスワードを変更しました')}};
+ const s=me.settings||{};
+ const accItem=(id,title,body,open)=>`<div class="card reveal" style="padding:0;margin-bottom:16px;overflow:hidden"><button class="sec ${open?'':'shut'}" data-act="acc2" style="padding:16px 24px">${ic('down','sm')}<span class="grow h3" style="color:var(--text)">${title}</span></button><div class="acc ${open?'':'shut'}"><div><div style="padding:0 24px 24px">${body}</div></div></div></div>`;
+ return `${topbar('ユーザー設定')}<div class="page scroll"><div class="in" style="max-width:640px">${accItem('a','アカウント',`<div class="setrow"><span class="grow col"><b>ハンドル名</b><span class="xs mute">変更はできません</span></span><span class="mono">@${me.handle}</span></div><div class="setrow"><span class="grow col"><b>プロフィール</b><span class="xs mute">表示名・アイコン・自己紹介</span></span><button class="btn sm" data-act="profile" data-id="${me.id}">編集</button></div>`,true)}
+ ${accItem('n','通知',`<div class="field"><label>メッセージ通知</label>${selHTML('nsel',[['all','すべてのメッセージ'],['mention','メンションとDMのみ'],['none','通知しない']],s.notif||'all')}</div><p class="xs mute">チャットごとのミュートは、リストを左にスワイプするか、チャット上部のベルから切り替えられます。</p>`,true)}
+ ${accItem('p','パスワード',`<form id="pwf" novalidate><div class="field"><label for="pw0">現在のパスワード</label><input class="inp" id="pw0" type="password" autocomplete="current-password"></div><div class="field"><label for="pw1">新しいパスワード（8文字以上）</label><input class="inp" id="pw1" type="password" autocomplete="new-password"></div><div class="field"><label for="pw2">新しいパスワード（確認）</label><input class="inp" id="pw2" type="password" autocomplete="new-password"><div class="err" id="pwe"></div></div><button class="btn pri" type="submit">変更する</button></form>`,false)}
+ ${accItem('d','アカウントの削除',`<p class="mute" style="margin-bottom:16px">アカウント、フレンド関係、送信したファイルが削除されます。メッセージは「削除されたユーザー」として残ります。</p><button class="btn danger" data-act="delAccount">アカウントを削除</button>`,false)}
+ <button class="btn block" data-act="logout">${ic('logout','sm')}ログアウト</button></div></div>`};
+A.acc2=el=>{el.classList.toggle('shut');el.nextElementSibling.classList.toggle('shut')};
+A.delAccount=()=>{confirmBox('アカウントを削除','この操作は元に戻せません。本当に削除しますか？','削除する',()=>{const id=me.id;const fids=Object.values(db.files).filter(f=>f.owner===id).map(f=>f.id);tx(d=>{delete d.users[id];Object.values(d.users).forEach(u=>{u.friends=u.friends.filter(x=>x!==id);u.reqIn=u.reqIn.filter(x=>x!==id);u.reqOut=u.reqOut.filter(x=>x!==id)});Object.values(d.rooms).forEach(r=>{if(r.members)r.members=r.members.filter(x=>x!==id)});Object.values(d.servers).forEach(s=>s.members=s.members.filter(x=>x!==id));fids.forEach(f=>delete d.files[f]);delete d.notifs[id]});fids.forEach(f=>Blobs.del(f));SS.removeItem('wc.sess');me=null;showAuth('login');toast('アカウントを削除しました')},true)};
+/* ---- app settings ---- */
+R.appset=el=>{el._after=()=>{[['thSeg','theme'],['moSeg','motion'],['deSeg','density']].forEach(([id,k])=>segInit($('#'+id),v=>{AS[k]=v;saveAS();toast('設定を保存しました')}));};
+ const sw=(k,l,d)=>`<div class="setrow"><span class="grow col"><b>${l}</b><span class="xs mute">${d}</span></span><button class="sw ${AS[k]?'on':''}" role="switch" aria-checked="${!!AS[k]}" data-act="toggle" data-k="${k}" aria-label="${l}"></button></div>`;
+ return `${topbar('アプリ設定')}<div class="page scroll"><div class="in" style="max-width:640px"><div class="card reveal"><div class="setrow"><span class="grow col"><b>テーマ</b><span class="xs mute">端末の設定に合わせることもできます</span></span>${segHTML('thSeg',[['dark','ダーク'],['light','ライト'],['auto','自動']],AS.theme)}</div>
+ <div class="setrow"><span class="grow col"><b>アニメーション</b><span class="xs mute">「控えめ」は動きを止めます</span></span>${segHTML('moSeg',[['auto','自動'],['full','常に'],['off','控えめ']],AS.motion)}</div>
+ <div class="setrow"><span class="grow col"><b>表示密度</b><span class="xs mute">リストの行の高さ</span></span>${segHTML('deSeg',[['comfortable','標準'],['compact','コンパクト']],AS.density)}</div>${sw('sound','通知音','新着メッセージで短い音を鳴らします')}</div>
+ ${sub('データ')}<div class="card reveal"><div class="setrow"><span class="grow col"><b>テスト用メッセージを追加</b><span class="xs mute">「公式サーバー」の雑談に500件を追加し、無限スクロールを試せます</span></span><button class="btn sm" data-act="genLog">追加</button></div>
+ <div class="setrow"><span class="grow col"><b>このブラウザのデータを初期化</b><span class="xs mute">全アカウント・メッセージ・ファイルを削除します</span></span><button class="btn sm danger" data-act="wipe">初期化</button></div></div></div></div>`};
+A.toggle=el=>{AS[el.dataset.k]=!AS[el.dataset.k];saveAS();el.classList.toggle('on');el.setAttribute('aria-checked',AS[el.dataset.k]);if(AS.sound)beep()};
+A.genLog=()=>{tx(d=>{const a=msgsOf('r_gen'),base=now()-5e5*60;const ws=['今日の天気はどうですか','おすすめの本を教えてください','週末の予定は決まりましたか','ありがとうございます','なるほど','確認しました','それは面白いですね','お疲れさまです','了解です','少し遅れます'];for(let i=0;i<500;i++){a.push({id:uid('m'),room:'r_gen',from:BOT,text:`${ws[i%ws.length]}（${i+1}）`,ts:base+i*6e4*7,readBy:[BOT,me.id],reactions:{}})}a.sort((x,y)=>x.ts-y.ts)});toast('500件を追加しました');renderAll('none')};
+A.wipe=()=>confirmBox('データを初期化','このブラウザに保存された全データが削除されます。','初期化',async()=>{LS.removeItem(KEY);LS.removeItem(PKEY);SS.removeItem('wc.sess');try{indexedDB.deleteDatabase('wc-files')}catch(e){}location.reload()});
+/* ---- files ---- */
+const FL={t:'all'};
+R.files=el=>{const adm=me.role==='admin',all=Object.values(db.files).filter(f=>adm||f.owner===me.id).sort((a,b)=>b.ts-a.ts),mine=Object.values(db.files).filter(f=>f.owner===me.id).reduce((a,f)=>a+f.size,0);
+ const kind=f=>f.type.startsWith('image/')?'img':f.type.startsWith('video/')?'vid':'doc';const list=all.filter(f=>FL.t==='all'||kind(f)===FL.t);
+ el._after=()=>{segInit($('#flSeg'),v=>{FL.t=v;renderMain('none')});$$('[data-bg]',el).forEach(e=>fileURL(e.dataset.bg).then(u=>u&&(e.style.backgroundImage=`url(${u})`)));setTimeout(()=>{const p=$('.prog i',el);if(p)p.style.width=Math.min(100,mine/1048576)+'%'},100)};
+ return `${topbar('画像・ファイル')}<div class="page scroll"><div class="in"><div class="card reveal" style="margin-bottom:24px"><div class="row" style="margin-bottom:8px"><b class="grow">使用量</b><span class="mono xs">${fmtSize(mine)} / 100 MB</span></div><div class="prog"><i></i></div></div><div style="margin-bottom:16px;overflow-x:auto">${segHTML('flSeg',[['all','すべて'],['img','画像'],['vid','動画'],['doc','ファイル']],FL.t)}</div>
+ ${list.length?`<div class="grid fgrid">${list.map(f=>`<div class="fcard reveal"><button class="pv" style="width:100%;border:0" ${kind(f)==='img'?`data-bg="${f.id}" data-act="fileView" data-id="${f.id}"`:`data-act="download" data-id="${f.id}"`} aria-label="開く">${kind(f)==='img'?'':ic(kind(f)==='vid'?'video':'file','lg')}</button><div style="padding:8px 8px 8px 16px" class="row"><div class="grow col" style="min-width:0"><div class="ell xs">${esc(f.name)}</div><div class="xs faint">${fmtSize(f.size)}${adm&&f.owner!==me.id?' ・ '+esc(U(f.owner)?.name||'不明'):''}</div></div>${f.owner===me.id||adm?`<button class="ib sm" data-act="fileDel" data-id="${f.id}" aria-label="削除">${ic('trash','sm')}</button>`:''}</div></div>`).join('')}</div>`:empty('folder','ファイルはありません','チャットで画像・動画・ファイルを送ると、ここで管理できます。')}</div></div>`};
+A.fileView=async el=>{const u=await fileURL(el.dataset.id);if(u)A.lightbox({src:u})};
+A.fileDel=el=>{const id=el.dataset.id;confirmBox('ファイルを削除','チャット内の表示も「削除されたファイル」になります。','削除',()=>{tx(d=>{delete d.files[id]});Blobs.del(id);urlCache.delete(id);toast('削除しました');renderMain('none')})};
+/* ---- admin ---- */
+R.admin=el=>{if(me.role!=='admin'){setTimeout(()=>{toast('管理者のみ利用できます','err');go('home',{},{replace:1})});return ''}
+ const us=Object.values(db.users).filter(u=>!u.bot),msgN=Object.values(db.msgs).reduce((a,l)=>a+l.length,0),online=us.filter(u=>pres(u.id)!=='offline').length;
+ el._after=()=>$$('.stat b',el).forEach(b=>countUp(b,+b.dataset.n));
+ return `${topbar('ユーザー管理')}<div class="page scroll"><div class="in"><div class="grid stats" style="margin-bottom:24px">${[['ユーザー',us.length],['オンライン',online],['メッセージ',msgN],['サーバー',Object.keys(db.servers).length]].map(([l,n])=>`<div class="stat reveal"><span class="xs mute">${l}</span><b data-n="${n}">0</b></div>`).join('')}</div>
+ <div class="tbw reveal"><table class="tb"><thead><tr><th>ユーザー</th><th>権限</th><th>状態</th><th>登録日</th><th></th></tr></thead><tbody>${us.map(u=>`<tr><td><div class="row" style="min-width:176px">${av(u,'s32')}<div class="col"><b class="ell">${esc(u.name)}</b><span class="xs mute">@${u.handle}</span></div></div></td><td>${u.role==='admin'?'<span class="tag">管理者</span>':'ユーザー'}</td><td>${u.suspended?'<span style="color:var(--danger)">停止中</span>':presLabel[pres(u.id)]}</td><td class="xs mute">${new Date(u.created).toLocaleDateString('ja-JP')}</td><td><div class="row" style="justify-content:flex-end;min-width:120px">${u.id===me.id?'<span class="xs faint">あなた</span>':`<button class="ib sm" data-act="admRole" data-id="${u.id}" data-tip="${u.role==='admin'?'管理者を解除':'管理者にする'}" aria-label="権限">${ic('shield','sm')}</button><button class="ib sm" data-act="admBan" data-id="${u.id}" data-tip="${u.suspended?'停止を解除':'利用を停止'}" aria-label="停止">${ic('ban','sm')}</button><button class="ib sm" data-act="admDel" data-id="${u.id}" data-tip="削除" aria-label="削除">${ic('trash','sm')}</button>`}</div></td></tr>`).join('')}</tbody></table></div></div></div>`};
+const adminOnly=()=>me.role==='admin';
+A.admRole=el=>{if(!adminOnly())return;const id=el.dataset.id;tx(d=>{d.users[id].role=d.users[id].role==='admin'?'user':'admin'});toast('権限を変更しました');renderMain('none')};
+A.admBan=el=>{if(!adminOnly())return;const id=el.dataset.id;tx(d=>{d.users[id].suspended=!d.users[id].suspended});toast('更新しました');renderMain('none')};
+A.admDel=el=>{if(!adminOnly())return;const id=el.dataset.id;confirmBox('ユーザーを削除',`${U(id).name}さんのアカウントを削除します。`,'削除',()=>{tx(d=>{delete d.users[id];Object.values(d.users).forEach(u=>{u.friends=u.friends.filter(x=>x!==id);u.reqIn=u.reqIn.filter(x=>x!==id);u.reqOut=u.reqOut.filter(x=>x!==id)});Object.values(d.rooms).forEach(r=>{if(r.members)r.members=r.members.filter(x=>x!==id)});Object.values(d.servers).forEach(s=>s.members=s.members.filter(x=>x!==id));delete d.notifs[id]});toast('削除しました');renderMain('none')})};
+/* ---- mobile menu ---- */
+R.menu=el=>{const it=(n,i,l,a={})=>`<button class="item reveal" data-act="nav" data-n="${n}" ${a.id?`data-id="${a.id}"`:''}>${ic(i)}<span class="grow">${l}</span>${ic('right','sm faint')}</button>`;
+ return `${topbar('メニュー',``,false)}<div class="page scroll"><div class="in" style="max-width:560px"><div class="card reveal row" style="margin-bottom:16px">${av(me,'s64')}<div class="col grow" style="min-width:0"><b class="h3 ell">${esc(me.name)}</b><span class="mute">@${me.handle}</span></div></div>${it('profile','user','プロフィール',{id:me.id})}${it('rooms','rooms','ルーム')}${it('search','search','検索')}${it('files','folder','画像・ファイル')}${me.role==='admin'?it('admin','shield','ユーザー管理'):''}${it('settings','sliders','ユーザー設定')}${it('appset','sun','アプリ設定')}<div style="margin-top:16px"><button class="btn block" data-act="logout">${ic('logout','sm')}ログアウト</button></div></div></div>`};
+/* ===== rooms: official / user-created (max 3 joined) ===== */
+const ROOM_MAX=3,NAME_MAX=24,DESC_MAX=120;
+const RM={q:''};
+const nk=s=>String(s||'').normalize('NFKC').toLowerCase().replace(/\s+/g,'');
+const escRe=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+const pubRooms=()=>Object.values(db.rooms).filter(r=>r.pub);
+const myPub=(id=me.id)=>pubRooms().filter(r=>r.members.includes(id));
+const isIn=r=>r.members.includes(me.id);
+const canEditRoom=r=>r.official?me.role==='admin':(r.owner===me.id||me.role==='admin');
+const lastTs=r=>{const l=lastMsg(r.id);return l?l.ts:r.created};
+const hlText=(s,q)=>{const e=esc(s);if(!q)return e;return e.replace(new RegExp(escRe(esc(q)),'ig'),m=>`<span class="mention">${m}</span>`)};
+const obBadge=(sm)=>`<span class="ob ${sm?'sm':''}">${sm?'':ic('shield')}OFFICIAL</span>`;
+
+/* ---- seed (once) ---- */
+function ensureOfficial(d){
+ if(d.officialInit)return false;d.officialInit=true;
+ const t=now(),day=864e5;
+ const mk=(id,name,desc,official,age,lines)=>{d.rooms[id]={id,type:'group',pub:true,official,name,desc,owner:official?null:BOT,members:official?[]:[BOT],pins:[],muted:{},popOff:{},created:t-age};
+  d.msgs[id]=lines.map((txt,i)=>({id:uid('m'),room:id,from:BOT,text:txt,ts:t-age+(i+1)*6e4*7,readBy:[BOT],reactions:{}}))};
+ mk('or_lobby','ロビー','はじめての人も気軽に参加できる総合ルームです。あいさつや雑談はここで。',true,30*day,['ロビーへようこそ。ここは誰でも参加できる公式ルームです。','困ったことがあれば「使い方・サポート」ルームも見てみてください。']);
+ mk('or_news','お知らせ・アップデート','運営からの最新情報と変更内容をお知らせします。',true,30*day,['ルーム機能を追加しました。公式ルームのほか、自分でルームを作ることもできます。','同時に参加できるルームは3つまでです。']);
+ mk('or_help','使い方・サポート','操作で困ったときの質問や、改善してほしい点はこちらへ。',true,30*day,['メッセージを右クリック（スマホは長押し）すると、返信・ピン留め・編集・削除ができます。','通知はルームごとにミュートやポップアップのオン・オフを切り替えられます。']);
+ mk('or_work','作業ルーム','それぞれの作業の進み具合を静かに共有する場所です。',true,29*day,['今日やることを一言書いてから始めるのがおすすめです。']);
+ mk('ur_photo','写真散歩部','撮った写真と、見つけた散歩コースを見せ合うルームです。',false,5*day,['先週の夕焼けがきれいでした。みなさんのお気に入りの時間帯はありますか？']);
+ mk('ur_night','深夜の作業通話','夜更かしして作業する人のための雑談ルーム。',false,3*day,['今夜は静かですね。おやすみ前の一杯どうぞ。']);
+ mk('ur_book','読書メモ','読んだ本の感想を一言ずつ残していくルームです。',false,1*day,['最近読んだ本を教えてください。短い感想だけでも大歓迎です。']);
+ return true}
+
+/* ---- validation ---- */
+function nameError(v,exId,exOfficial){v=String(v||'').trim();
+ if(!v)return 'ルーム名を入力してください';
+ if([...v].length>NAME_MAX)return `${NAME_MAX}文字以内にしてください`;
+ if(!exOfficial&&/official|公式|運営/.test(nk(v)))return '「公式」「OFFICIAL」「運営」を含む名前は使えません';
+ if(pubRooms().some(r=>r.id!==exId&&nk(r.name)===nk(v)))return '同じ名前のルームがすでにあります。別の名前にしてください';
+ return ''}
+
+/* ---- cards ---- */
+function roomCard(r,q='',prev=false){
+ const joined=!prev&&isIn(r),owner=r.official?'運営':(U(r.owner)?.name||'不明');
+ const act=prev?`<button class="btn pri grow" disabled>参加する</button>`:joined?`<button class="btn grow" data-act="room" data-id="${r.id}">開く</button><span class="row xs" style="color:var(--accent);gap:4px">${ic('check','sm')}参加中</span>`:`<button class="btn pri grow" data-act="joinRoom" data-id="${r.id}">参加する</button>`;
+ return `<div class="rcard ${r.official?'off':''} ${prev?'':'reveal'}"><div class="row" style="gap:16px;align-items:flex-start"><span class="rav">${ic(r.official?'shield':'users','lg')}</span><div class="grow col" style="min-width:0"><b class="ell">${hlText(r.name,q)}</b><span class="xs mute row" style="gap:8px;min-width:0">${ic('users','sm')}<span>${r.members.length}人</span><span class="faint">・</span><span class="ell">${r.official?'運営':'作成者 '+esc(owner)}</span></span></div>${r.official?obBadge():''}</div>
+ <p class="rdesc">${hlText(r.desc||'説明はありません',q)}</p><div class="row" style="gap:16px">${act}</div></div>`}
+function mineRow(r){const n=unreadOf(r),mu=r.muted[me.id];
+ return `<div class="item reveal" role="button" tabindex="0" data-act="room" data-id="${r.id}" style="min-height:64px">${roomAv(r,'s40')}<span class="grow col" style="min-width:0"><span class="row" style="gap:8px"><b class="ell">${esc(r.name)}</b>${r.official?obBadge(1):''}</span><span class="xs mute">${r.members.length}人${mu?' ・ ミュート中':''}${r.popOff&&r.popOff[me.id]?' ・ ポップアップ オフ':''}</span></span>${n&&!mu?`<span class="badge">${n}</span>`:''}<button class="ib sm" data-act="roomMenu" data-menu data-id="${r.id}" aria-label="ルームの設定">${ic('more')}</button></div>`}
+function roomsBody(){
+ const q=RM.q.trim(),all=pubRooms();
+ if(q){const k=nk(q);const res=all.filter(r=>nk(r.name).includes(k)||nk(r.desc||'').includes(k)).sort((a,b)=>(b.official-a.official)||b.members.length-a.members.length);
+  return sub(`検索結果 ${res.length}件`)+(res.length?`<div class="rgrid">${res.map(r=>roomCard(r,q)).join('')}</div>`:empty('search',`「${q}」のルームはありません`,'別の言葉で探すか、この名前で新しく作れます。',`<button class="btn pri" data-act="roomNew" data-name="${esc(q)}">${ic('plus','sm')}この名前で作成</button>`))}
+ const off=all.filter(r=>r.official).sort((a,b)=>a.created-b.created),usr=all.filter(r=>!r.official);
+ const pop=[...usr].sort((a,b)=>b.members.length-a.members.length||lastTs(b)-lastTs(a)).slice(0,6);
+ const nw=[...usr].sort((a,b)=>b.created-a.created).slice(0,6),mine=myPub();
+ const none=empty('users','まだルームがありません','最初のルームを作ってみましょう。',`<button class="btn pri" data-act="roomNew">${ic('plus','sm')}ルームを作成</button>`);
+ return (mine.length?sub('参加中のルーム')+`<div class="col">${mine.map(mineRow).join('')}</div>`:'')
+  +sub(`公式ルーム <span class="faint xs" style="margin-left:8px">運営が用意したルーム</span>`)+(off.length?`<div class="rgrid">${off.map(r=>roomCard(r)).join('')}</div>`:'<p class="mute">公式ルームはありません。</p>')
+  +sub('人気のルーム')+(pop.length?`<div class="rgrid">${pop.map(r=>roomCard(r)).join('')}</div>`:none)
+  +sub('新着ルーム')+(nw.length?`<div class="rgrid">${nw.map(r=>roomCard(r)).join('')}</div>`:none)}
+function commSwitch(cur){return `<div style="margin-bottom:24px">${segHTML('commSeg',[['rooms','ルーム'],['servers','サーバー']],cur)}</div>`}
+function slotsCard(){const n=myPub().length;
+ return `<div class="card row reveal" style="gap:24px;padding:16px 24px;flex-wrap:wrap"><div class="grow col" style="min-width:200px"><b>参加中のルーム ${n} / ${ROOM_MAX}</b><span class="xs mute">${n>=ROOM_MAX?'上限に達しています。新しく参加するには、どれかを退出してください。':`あと${ROOM_MAX-n}つ参加できます。`}</span></div><div class="pips" data-n="${n}">${[0,1,2].map(i=>`<i style="--i:${i}"></i>`).join('')}</div></div>`}
+function fillPips(){const n=myPub().length;requestAnimationFrame(()=>requestAnimationFrame(()=>$$('.pips i').forEach((e,i)=>e.classList.toggle('on',i<n))))}
+
+R.rooms=el=>{
+ el._after=()=>{segInit($('#commSeg'),v=>{if(v!=='rooms')go(v)});fillPips();
+  $('#rq').addEventListener('input',debounce(e=>{RM.q=e.target.value;const b=$('#rbody');b.innerHTML=roomsBody();observeReveals(b)},120))};
+ return `${topbar('コミュニティ',`<button class="btn sm pri" data-act="roomNew">${ic('plus','sm')}ルームを作成</button>`)}<div class="page scroll"><div class="in" style="max-width:1040px">${commSwitch('rooms')}${slotsCard()}
+ <div class="search" style="margin-top:16px">${ic('search')}<input class="inp" id="rq" placeholder="ルーム名・説明文で検索" autocomplete="off" value="${esc(RM.q)}" aria-label="ルームを検索"></div><div id="rbody">${roomsBody()}</div></div></div>`};
+
+/* ---- join / leave ---- */
+function purgeRoom(d,id){Object.values(d.files).filter(f=>f.room===id).forEach(f=>{Blobs.del(f.id);delete d.files[f.id]});delete d.rooms[id];delete d.msgs[id]}
+function leaveCore(id){let deleted=false;
+ tx(d=>{const r=d.rooms[id];if(!r||!r.pub)return;r.members=r.members.filter(x=>x!==me.id);delete r.muted[me.id];if(r.popOff)delete r.popOff[me.id];
+  if(!r.official&&r.owner===me.id){const next=r.members.find(x=>x!==BOT&&d.users[x]);if(next){r.owner=next;notify(next,{type:'system',text:`「${r.name}」の管理者になりました`,room:id})}else{purgeRoom(d,id);deleted=true}}});
+ return deleted}
+function limitDlg(done,verb){
+ toast(`同時に参加できるルームは${ROOM_MAX}つまでです`,'err');
+ const mine=myPub();
+ const m=openModal(`<div class="h3" style="margin-bottom:8px">参加できるルームは${ROOM_MAX}つまでです</div><p class="mute" style="margin-bottom:16px">${verb}するには、参加中のルームを1つ退出してください。</p><div class="col" style="margin-bottom:24px">${mine.map(r=>`<div class="item" style="min-height:56px"><span class="grow col" style="min-width:0"><span class="row" style="gap:8px"><b class="ell">${esc(r.name)}</b>${r.official?obBadge(1):''}</span><span class="xs mute">${r.members.length}人</span></span><button class="btn sm danger" data-leave="${r.id}">退出して続ける</button></div>`).join('')}</div><div class="row" style="justify-content:flex-end"><button class="btn" data-close>キャンセル</button></div>`);
+ m.addEventListener('click',e=>{const b=e.target.closest('[data-leave]');if(!b)return;const id=b.dataset.leave;leaveCore(id);m.close();toast('退出しました');if(route.n==='room'&&route.id===id)go('rooms',{},{replace:1});done&&done()})}
+A.joinRoom=el=>{const id=el.dataset.id;let res='ok',rname='';
+ tx(d=>{const rr=d.rooms[id];if(!rr||!rr.pub){res='gone';return}if(rr.members.includes(me.id)){res='in';return}
+  if(Object.values(d.rooms).filter(x=>x.pub&&x.members.includes(me.id)).length>=ROOM_MAX){res='cap';return}
+  rr.members.push(me.id);rname=rr.name;if(!rr.official&&rr.owner&&rr.owner!==BOT)notify(rr.owner,{type:'system',text:`${me.name}さんが「${rr.name}」に参加しました`,room:id})});
+ if(res==='cap'){limitDlg(()=>A.joinRoom(el),`「${db.rooms[id]?.name||''}」に参加`);return}
+ if(res==='gone'){toast('このルームは見つかりません','err');renderMain('none');return}
+ if(res==='ok'){burstEl(el,20);toast(`「${rname}」に参加しました`)}
+ setTimeout(()=>go('room',{id}),res==='ok'?220:0)};
+A.leaveRoom=el=>{const id=el.dataset.id,r=db.rooms[id];if(!r)return;
+ const lone=!r.official&&r.owner===me.id&&!r.members.some(x=>x!==me.id&&x!==BOT&&U(x));
+ confirmBox('ルームから退出',lone?`あなた以外のメンバーがいないため、退出すると「${r.name}」は削除されます。`:`「${r.name}」から退出します。メッセージ履歴は残っているメンバーに残ります。${!r.official&&r.owner===me.id?' 管理者は次のメンバーに引き継がれます。':''}`,'退出',()=>{leaveCore(id);toast('退出しました');if(route.n==='room'&&route.id===id)go('rooms',{},{replace:1});else renderAll('none')})};
+
+/* ---- per-room notification controls ---- */
+function notifMenu(el,id){const r=db.rooms[id];if(!r)return;const mu=!!r.muted[me.id],po=!!(r.popOff&&r.popOff[me.id]);
+ const m=menuAt(el,`<button data-act="mute" data-id="${id}">${ic(mu?'bell':'bellOff')}${mu?'ミュートを解除':'ミュートする'}</button><button data-act="roomPop" data-id="${id}">${ic(po?'bell':'bellOff')}${po?'ポップアップ通知をオンにする':'ポップアップ通知をオフにする'}</button>${el.dataset.act==='roomMenu'?`<hr><button class="danger" data-act="leaveRoom" data-id="${id}">${ic('logout')}退出する</button>`:''}`,{right:true});m.addEventListener('click',e=>{if(e.target.closest('button'))m.remove()})}
+A.roomMenu=el=>notifMenu(el,el.dataset.id);
+A.roomNotif=el=>notifMenu(el,el.dataset.id);
+A.roomPop=el=>{const id=el.dataset.id;let on;tx(d=>{const r=d.rooms[id];r.popOff=r.popOff||{};on=!r.popOff[me.id];if(on)r.popOff[me.id]=true;else delete r.popOff[me.id]});toast(on?'このルームのポップアップ通知をオフにしました':'このルームのポップアップ通知をオンにしました');if(route.n==='rooms')renderMain('none');else if(route.n==='room'){panelHTML();syncBell()}};
+const _mute=A.mute;A.mute=el=>{_mute(el);if(route.n==='rooms')renderMain('none');else if(route.n==='room'){panelHTML();syncBell()}};
+function syncBell(){const r=curRoom(),b=$('.top [data-act=roomNotif]');if(!r||!b)return;const mu=!!r.muted[me.id];b.classList.toggle('on',mu);b.innerHTML=ic(mu?'bellOff':'bell')}
+A.roomSw=el=>{const k=el.dataset.k,id=el.dataset.id;let on;tx(d=>{const r=d.rooms[id];r[k]=r[k]||{};on=!r[k][me.id];if(on)r[k][me.id]=true;else delete r[k][me.id]});el.classList.toggle('on',on);el.setAttribute('aria-checked',on);if(k==='muted'){renderRail();renderSide();renderTab()}syncBell()};
+
+/* ---- create ---- */
+R.roomNew=el=>{
+ const pre=(route.name||'').slice(0,NAME_MAX);const n=myPub().length;
+ const draw=()=>{const nm=$('#rn').value.trim(),ds=$('#rd').value.trim();$('#rprev').innerHTML=roomCard({id:'prev',name:nm||'ルーム名',desc:ds||'説明文がここに表示されます',members:[me.id],official:false,owner:me.id},'',true)};
+ const check=()=>{const v=$('#rn').value,e=nameError(v,null,false);const show=v.trim()&&e;$('#rne').textContent=show?e:'';$('#rn').classList.toggle('bad',!!show);return !e};
+ el._after=()=>{fillPips();const rn=$('#rn'),rd=$('#rd');
+  const cnt=()=>{$('#rnc').textContent=`${[...rn.value].length}/${NAME_MAX}`;$('#rdc').textContent=`${[...rd.value].length}/${DESC_MAX}`};
+  rn.addEventListener('input',()=>{cnt();draw();if(rn.value.trim())check();else{$('#rne').textContent='';rn.classList.remove('bad')}});rd.addEventListener('input',()=>{cnt();draw()});cnt();draw();
+  $('#rf').onsubmit=ev=>{ev.preventDefault();const name=rn.value.trim(),desc=rd.value.trim(),btn=$('#rsub');
+   const err=nameError(name,null,false);if(err){$('#rne').textContent=err;rn.classList.add('bad');const c=$("#rf");c.classList.remove('shake');void c.offsetWidth;c.classList.add('shake');rn.focus();return}
+   const go2=()=>{let id,fail='';
+    tx(d=>{if(Object.values(d.rooms).filter(r=>r.pub&&r.members.includes(me.id)).length>=ROOM_MAX){fail='cap';return}
+     if(Object.values(d.rooms).some(r=>r.pub&&nk(r.name)===nk(name))){fail='dup';return}
+     id=uid('r');d.rooms[id]={id,type:'group',pub:true,official:false,name,desc,owner:me.id,members:[me.id],pins:[],muted:{},popOff:{},created:now()};d.msgs[id]=[]});
+    if(fail==='cap'){limitDlg(go2,'ルームを作成');return}
+    if(fail==='dup'){$('#rne').textContent='同じ名前のルームがすでにあります。別の名前にしてください';rn.classList.add('bad');return}
+    btn.disabled=true;burstEl(btn,26,1.2);toast(`「${name}」を作成しました`);
+    setTimeout(()=>{stack.pop();route={n:'rooms'};go('room',{id})},reduced()?0:320)};
+   go2()};
+  if(pre){rn.value=pre;cnt();draw();check()}setTimeout(()=>rn.focus(),320)};
+ return `<div class="top"><button class="ib" data-act="back" aria-label="戻る">${ic('left')}</button><b class="t grow ell">ルームを作成</b></div><div class="page scroll"><div class="in" style="max-width:960px"><div class="rnew">
+ <form class="card col" id="rf" style="gap:24px" novalidate><div class="col" style="gap:8px"><div class="h2">新しいルーム</div><p class="mute">名前と説明を決めて作成します。作成するとあなたが管理者として自動で参加します。</p></div>
+ <div class="field" style="margin:0"><label for="rn">ルーム名</label><input class="inp" id="rn" maxlength="${NAME_MAX}" autocomplete="off" placeholder="例：写真散歩部"><div class="row" style="justify-content:space-between;align-items:flex-start;margin-top:8px"><div class="err" id="rne" style="margin:0"></div><span class="xs faint" id="rnc" style="flex:none"></span></div><p class="xs faint" style="margin-top:8px">同じ名前のルームは作れません（大文字・小文字、全角・半角は区別しません）。</p></div>
+ <div class="field" style="margin:0"><label for="rd">説明文（任意）</label><textarea class="inp" id="rd" rows="4" maxlength="${DESC_MAX}" placeholder="どんな人に、何のために使うルームかを書きます" style="height:auto;padding:8px 16px;resize:vertical"></textarea><div class="row" style="justify-content:flex-end;margin-top:8px"><span class="xs faint" id="rdc"></span></div></div>
+ <div class="row" style="justify-content:flex-end;gap:16px"><button type="button" class="btn" data-act="back">キャンセル</button><button class="btn pri" id="rsub" type="submit">${ic('plus','sm')}作成する</button></div></form>
+ <div class="col" style="gap:16px"><span class="sec" style="padding:0">プレビュー</span><div id="rprev"></div>${slotsCard()}<p class="xs faint">${n>=ROOM_MAX?'参加上限に達しています。作成するときに、退出するルームを選べます。':`作成すると参加中のルームは ${n+1} / ${ROOM_MAX} になります。`}</p></div></div></div></div>`};
+A.roomNew=el=>go('roomNew',{name:el.dataset.name||''});
+
+/* ---- edit / delete ---- */
+A.editRoom=()=>{const r=curRoom();if(!r||!canEditRoom(r))return;
+ const m=openModal(`<div class="h3" style="margin-bottom:16px">ルームの情報を変更</div><div class="field"><label for="en">ルーム名</label><input class="inp" id="en" maxlength="${NAME_MAX}" value="${esc(r.name)}"><div class="err" id="ene"></div></div><div class="field"><label for="ed">説明文</label><textarea class="inp" id="ed" rows="4" maxlength="${DESC_MAX}" style="height:auto;padding:8px 16px">${esc(r.desc||'')}</textarea></div><div class="row" style="justify-content:flex-end"><button class="btn" data-close>キャンセル</button><button class="btn pri" id="eok">保存</button></div>`);
+ m.querySelector('#eok').onclick=()=>{const nm=m.querySelector('#en').value.trim(),ds=m.querySelector('#ed').value.trim(),e=nameError(nm,r.id,r.official);if(e){m.querySelector('#ene').textContent=e;m.querySelector('#en').classList.add('bad');return}
+  let ok=false;tx(d=>{const rr=d.rooms[r.id];if(!rr||!canEditRoom(rr))return;rr.name=nm;rr.desc=ds;ok=true});m.close();if(ok){toast('変更しました');renderAll('none')}}};
+A.delRoom=()=>{const r=curRoom();if(!r||!r.pub)return;if(r.official?me.role!=='admin':!(r.owner===me.id||me.role==='admin'))return;
+ confirmBox('ルームを削除',`「${r.name}」とメッセージ履歴をすべて削除します。この操作は元に戻せません。`,'削除する',()=>{const id=r.id,mem=r.members.slice();tx(d=>{const rr=d.rooms[id];if(!rr)return;mem.filter(x=>x!==me.id).forEach(x=>notify(x,{type:'system',text:`「${rr.name}」は削除されました`}));purgeRoom(d,id)});toast('ルームを削除しました');go('rooms',{},{replace:1})})};
+
+/* ---- chat integration ---- */
+const _Rroom=R.room;
+R.room=el=>{let h=_Rroom(el);const r=db.rooms[route.id];
+ if(r&&r.pub){const nm=`<b class="ell">${esc(roomName(r))}</b>`;h=h.replace(nm,`<span class="row" style="gap:8px;min-width:0">${nm}${r.official?obBadge(1):''}</span>`).replace(`data-act="mute" data-id="${r.id}"`,`data-act="roomNotif" data-menu data-id="${r.id}"`)}return h};
+const _roomSub=roomSub;roomSub=function(r){return r.pub?`${r.members.length}人が参加中`:_roomSub(r)};
+const _panelHTML=panelHTML;
+panelHTML=function(...a){_panelHTML(...a);const r=curRoom(),p=UIS.panel;if(!r||!r.pub||!p||p.k!=='info'||(p.tab||'members')!=='members')return;
+ const body=$('#panel .scroll.grow');if(!body)return;
+ $$('[data-act=renameGroup],[data-act=addMember]',body).forEach(b=>b.parentElement.remove());
+ const mu=!!r.muted[me.id],po=!!(r.popOff&&r.popOff[me.id]),own=r.official?'運営':(U(r.owner)?.name||'不明');
+ const canDel=r.official?me.role==='admin':(r.owner===me.id||me.role==='admin');
+ const sw=(k,l,d,on)=>`<div class="setrow" style="padding:8px 0"><span class="grow col"><b>${l}</b><span class="xs mute">${d}</span></span><button class="sw ${on?'on':''}" role="switch" aria-checked="${on}" data-act="roomSw" data-k="${k}" data-id="${r.id}" aria-label="${l}"></button></div>`;
+ body.insertAdjacentHTML('afterbegin',`<div class="col" style="padding:16px;gap:8px;border-bottom:1px solid var(--line)"><div class="row" style="gap:8px">${r.official?obBadge():'<span class="tag">ユーザー作成</span>'}</div><b class="h3">${esc(r.name)}</b><p class="mute" style="word-break:break-word">${esc(r.desc||'説明はありません')}</p><span class="xs faint">${r.official?'運営':'管理者 '+esc(own)} ・ ${r.members.length}人 ・ ${fmtD(r.created)}作成</span>
+ <div style="margin-top:8px">${sw('muted','ミュート','バッジと通知を出しません',mu)}${sw('popOff','ポップアップ通知を止める','バッジは表示されます',po)}</div>
+ <div class="col" style="gap:8px">${canEditRoom(r)?`<button class="btn block" data-act="editRoom">${ic('edit','sm')}名前・説明を変更</button>`:''}<button class="btn block" data-act="leaveRoom" data-id="${r.id}">${ic('logout','sm')}このルームから退出</button>${canDel?`<button class="btn danger block" data-act="delRoom">${ic('trash','sm')}ルームを削除</button>`:''}</div></div>`)};
+/* ===== actions ===== */
+A.nav=el=>{const n=el.dataset.n;go(n,n==='profile'?{id:el.dataset.id||me.id}:{})};
+A.room=el=>{if(el.dataset.dragged)return;go('room',{id:el.dataset.id})};
+A.back=()=>goBack();
+A.drawer=()=>{UIS.drawer=!UIS.drawer;syncShell()};
+A.acc=el=>{UIS.shut[el.dataset.id]=!UIS.shut[el.dataset.id];el.classList.toggle('shut');el.nextElementSibling.classList.toggle('shut')};
+A.mute=el=>{const id=el.dataset.id;let on;tx(d=>{const r=d.rooms[id];on=!r.muted[me.id];if(on)r.muted[me.id]=true;else delete r.muted[me.id]});toast(on?'ミュートしました':'ミュートを解除しました');renderSide();renderRail();renderTab();if(route.n==='room'&&route.id===id)renderMain('none')};
+A.hideRoom=el=>{const id=el.dataset.id;tx(d=>{const r=d.rooms[id];r.hidden=r.hidden||{};r.hidden[me.id]=now()});toast('チャットを非表示にしました','ok',{action:'元に戻す',fn:()=>{tx(d=>{delete d.rooms[id].hidden[me.id]});renderAll('none')}});if(route.n==='room'&&route.id===id)go('home',{},{replace:1});else renderAll('none')};
+A.meMenu=el=>{const r=el.getBoundingClientRect(),st=me.status||'online';const mk=(v,l)=>`<button data-act="status" data-v="${v}">${ic(st===v?'check':'clock','sm')}${l}</button>`;
+ const m=openMenu(`<div class="row" style="padding:8px 16px 8px 8px">${av(me,'s40')}<div class="col" style="min-width:0"><b class="ell">${esc(me.name)}</b><span class="xs mute">@${me.handle}</span></div></div><hr>${mk('online','オンライン')}${mk('away','離席中')}${mk('invisible','オフライン表示')}<hr><button data-act="nav" data-n="profile" data-id="${me.id}">${ic('user')}プロフィール</button><button data-act="nav" data-n="settings">${ic('user')}ユーザー設定</button><button data-act="nav" data-n="appset">${ic('sliders')}アプリ設定</button><hr><button class="danger" data-act="logout">${ic('logout')}ログアウト</button>`,r.right+8,r.top-8,{h:r.height});m.style.setProperty('--ox','bottom left')};
+A.status=el=>setStatus(el.dataset.v);
+A.logout=()=>{const j=jget(LS,PKEY,{});delete j[me.id];jset(LS,PKEY,j);SS.removeItem('wc.sess');stack=[];UIS.panel=null;route={n:'home'};me=null;showAuth('login');toast('ログアウトしました')};
+document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if(!el)return;const f=A[el.dataset.act];if(!f)return;if(el.dataset.dragged)return;const mn=el.closest('.menu');e.stopPropagation&&0;f(el,e);if(mn&&!mn.querySelector('.emo')&&el.dataset.act!=='status')mn.remove();else if(mn&&el.dataset.act!=='emojiPick')mn.remove()});
+document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('[role=button][data-act]')){e.preventDefault();e.target.click()}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'&&me){e.preventDefault();go('search')}if(e.key==='Escape'){if(UIS.drawer){UIS.drawer=false;syncShell()}$('#fab.open')&&A.fabClose()}});
+document.addEventListener('pointerdown',e=>{const f=$('#fab.open');if(f&&!f.contains(e.target))A.fabClose()});
+/* ===== presence ===== */
+let lastInput=now();['pointerdown','keydown','touchstart'].forEach(t=>addEventListener(t,()=>lastInput=now(),{passive:true}));
+function beat(){if(!me)return;const j=jget(LS,PKEY,{});j[me.id]={t:now(),idle:now()-lastInput>18e4||document.hidden&&now()-lastInput>6e4};for(const k in j)if(now()-j[k].t>864e5)delete j[k];jset(LS,PKEY,j);refreshDots()}
+setInterval(beat,10000);addEventListener('beforeunload',()=>{if(!me)return;const j=jget(LS,PKEY,{});delete j[me.id];jset(LS,PKEY,j)});
+/* ===== remote sync ===== */
+let lastSeen=now();const seenN=new Set();
+const onRemote=(()=>{let t;return function(manual){clearTimeout(t);t=setTimeout(()=>doRemote(manual===true),manual===true?0:70)}})();
+function doRemote(manual){if(!me)return;const id=me.id,fresh=load();if(!fresh)return;db=fresh;me=db.users[id];
+ if(!me||me.suspended){const sus=me&&me.suspended;SS.removeItem('wc.sess');me=null;showAuth('login');toast(sus?'このアカウントは停止されています':'アカウントが削除されました','err');return}
+ const open=route.n==='room'&&!document.hidden?route.id:null;let shown=0;
+ for(const r of Object.values(db.rooms)){if(!canAccess(r)||r.muted[me.id]||(r.popOff&&r.popOff[me.id]))continue;const a=msgsOf(r.id);for(let i=a.length-1;i>=0;i--){const m=a[i];if(m.ts<=lastSeen)break;if(m.from===me.id||m.del||m.thread||open===r.id)continue;const mode=me.settings?.notif||'all';if(mode==='none')continue;if(mode==='mention'&&!(r.type==='dm'||(m.text||'').includes('@'+me.handle)))continue;
+   if(shown++<2){const who=U(m.from)?.name||'';toast(`${who}${r.type==='dm'?'':' ('+roomName(r)+')'}: ${(m.text||'ファイルを送信しました').slice(0,40)}`,'info',{action:'開く',fn:()=>go('room',{id:r.id}),ms:4500});beep()}}}
+ for(const n of (db.notifs[me.id]||[])){if(n.ts>lastSeen&&!seenN.has(n.id)&&['friend','system','reaction','thread'].includes(n.type)&&shown++<3){toast(n.text,'info',{ms:4200})}seenN.add(n.id)}
+ lastSeen=now();
+ renderRail();renderSide();renderTab();
+ if(route.n==='room'){const r=db.rooms[route.id];if(!r||!canAccess(r)){go('home',{},{replace:1});return}renderMsgs();if(UIS.panel)panelHTML();const s=$('#roomSub');if(s)s.textContent=roomSub(r);markRead()}
+ else if(['home','friends','notifs','servers','server','admin','files','rooms'].includes(route.n)&&(manual||!document.activeElement||!$main().contains(document.activeElement)||!/INPUT|TEXTAREA/.test(document.activeElement.tagName)))renderMain('none');
+ else if(route.n==='profile'&&route.id!==me.id)renderMain('none')}
+addEventListener('storage',e=>{if(e.key===KEY)onRemote();if(e.key===PKEY&&me){refreshDots();const s=$('#roomSub'),r=curRoom();if(s&&r)s.textContent=roomSub(r)}});
+/* ===== auth ===== */
+function showAuth(mode){$('#shell').classList.add('hide');const a=$('#auth');a.classList.remove('hide');document.title='ウェブチャット';
+ const reg=mode==='register';
+ a.innerHTML=`<div class="bgl" aria-hidden="true">${[[-4,-6,480],[62,-14,360],[8,52,560],[70,60,300]].map(([x,y,s],i)=>`<i data-d="${(i+1)*6}" style="left:${x}%;top:${y}%;width:${s}px;height:${s}px"></i>`).join('')}</div>
+ <div class="authbox"><div class="row" style="margin-bottom:24px;gap:16px"><span class="logo">${ic('logo','lg')}</span><div class="col"><h1 class="h2" style="line-height:32px">${kin('ウェブチャット',200)}</h1><span class="xs mute">${reg?'アカウントを作成':'ログインして続ける'}</span></div></div>
+ <div class="card"><form id="af" novalidate>${reg?`<div class="field"><label for="an">表示名</label><input class="inp" id="an" maxlength="20" autocomplete="nickname" placeholder="例：さくら"><div class="err"></div></div>`:''}
+ <div class="field"><label for="ah">ハンドル名${reg?'（英数字と_、3〜16文字）':''}</label><input class="inp" id="ah" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="16" value="${esc(LS.getItem('wc.lastHandle')||'')}"><div class="err"></div></div>
+ <div class="field"><label for="ap">パスワード${reg?'（8文字以上）':''}</label><input class="inp" id="ap" type="password" autocomplete="${reg?'new-password':'current-password'}"><div class="err"></div>${reg?'<div class="pw-meter"><i></i></div>':''}</div>
+ ${reg?`<div class="field"><label for="ap2">パスワード（確認）</label><input class="inp" id="ap2" type="password" autocomplete="new-password"><div class="err"></div></div>`:''}
+ <button class="btn pri block" id="asub" type="submit" style="height:48px">${reg?'アカウントを作成':'ログイン'}</button></form>
+ <div class="auth-sw mute">${reg?'アカウントをお持ちですか？':'はじめてですか？'} <a href="#" id="asw">${reg?'ログイン':'新規登録'}</a></div></div>
+ <p class="xs faint" style="margin-top:16px;text-align:center">データはこのブラウザの中だけに保存されます。別のタブでもう一つアカウントを作ると、タブ同士で会話できます。</p></div>`;
+ $('#asw').onclick=e=>{e.preventDefault();showAuth(reg?'login':'register')};
+ const f=$('#af'),err=(id,t)=>{const i=$('#'+id),e=i.closest('.field').querySelector('.err');e.textContent=t||'';i.classList.toggle('bad',!!t);return !t};
+ const shake=()=>{const c=$('.card',a);c.classList.remove('shake');void c.offsetWidth;c.classList.add('shake')};
+ if(reg){$('#ap').addEventListener('input',()=>{const v=$('#ap').value;const sc=Math.min(1,(v.length>=8)*.4+(/[A-Z]/.test(v)&&/[a-z]/.test(v))*.2+/\d/.test(v)*.2+/[^A-Za-z0-9]/.test(v)*.2);$('.pw-meter i',a).style.width=(v?Math.max(.1,sc)*100:0)+'%'});
+  $('#ah').addEventListener('input',()=>{const v=$('#ah').value.toLowerCase();$('#ah').value=v;if(!v)return err('ah','');if(!handleOk(v))return err('ah','英数字と_で3〜16文字にしてください');const l=load()||db;err('ah',Object.values(l.users).some(u=>u.handle===v)?'このハンドル名は使われています':'')})}
+ let fails=0;
+ a.onpointermove=e=>{if(reduced())return;const x=e.clientX/innerWidth-.5,y=e.clientY/innerHeight-.5;$$('.bgl i',a).forEach(i=>i.style.transform=`translate(${x*+i.dataset.d*3}px,${y*+i.dataset.d*3}px)`)};
+ f.onsubmit=async ev=>{ev.preventDefault();const btn=$('#asub');const h=$('#ah').value.trim().toLowerCase(),p=$('#ap').value;let ok=true;
+  if(reg){const n=$('#an').value.trim();ok=err('an',!n?'表示名を入力してください':n.length>20?'20文字以内にしてください':'')&ok}
+  ok=err('ah',!h?'ハンドル名を入力してください':(reg&&!handleOk(h))?'英数字と_で3〜16文字にしてください':'')&ok;
+  ok=err('ap',!p?'パスワードを入力してください':(reg&&p.length<8)?'8文字以上にしてください':'')&ok;
+  if(reg)ok=err('ap2',$('#ap2').value!==p?'パスワードが一致しません':'')&ok;
+  if(!ok){shake();return}
+  btn.disabled=true;btn.innerHTML='<span class="spin" style="width:20px;height:20px;border-top-color:var(--on-accent);border-color:rgb(0 0 0/.2)"></span>';
+  const fresh=load();if(fresh)db=fresh;await sleep(reduced()?0:450);
+  if(reg){if(findByHandle(h)){err('ah','このハンドル名は使われています');shake();btn.disabled=false;btn.textContent='アカウントを作成';return}
+   const salt=uid('s'),hs=await hash(p,salt),id=uid('u'),name=$('#an').value.trim();
+   tx(d=>{const first=!Object.values(d.users).some(u=>!u.bot);d.users[id]={id,name,handle:h,hash:hs,salt,bio:'',status:'online',tone:Math.floor(Math.random()*5),role:first?'admin':'user',created:now(),friends:[BOT],reqIn:[],reqOut:[],settings:{notif:'all'}};d.users[BOT].friends.push(id);d.servers[SYS_SV].members.push(id);
+    const r=ensureDM(id,BOT);d.msgs[r.id].push({id:uid('m'),room:r.id,from:BOT,text:`はじめまして、${name}さん。ミオです。\n何か話しかけてみてください。「使い方」と送ると機能を案内します。`,ts:now(),readBy:[BOT],reactions:{}});
+    if(first)notify(id,{type:'system',text:'最初のアカウントなので管理者権限が付与されました'})});
+   LS.setItem('wc.lastHandle',h);burstEl(btn,26,1.3);await sleep(reduced()?0:350);startSession(id,true)}
+  else{const u=findByHandle(h);const good=u&&!u.bot&&await hash(p,u.salt)===u.hash;
+   if(!good||u.suspended){fails++;err('ap',u&&u.suspended&&good?'このアカウントは停止されています':'ハンドル名またはパスワードが違います');shake();btn.disabled=fails>=5;btn.textContent='ログイン';if(fails>=5){setTimeout(()=>{btn.disabled=false;fails=0},4000);err('ap','試行回数が多すぎます。少し待ってください')}return}
+   LS.setItem('wc.lastHandle',h);startSession(u.id,false)}};
+ setTimeout(()=>$(reg?'#an':'#ah').focus(),320)}
+function startSession(id,fresh){SS.setItem('wc.sess',id);me=db.users[id];$('#auth').classList.add('hide');$('#auth').innerHTML='';$('#shell').classList.remove('hide');stack=[];route={n:'home'};UIS.panel=null;lastSeen=now();(db.notifs[me.id]||[]).forEach(n=>seenN.add(n.id));document.title='ウェブチャット';beat();renderAll('enter');if(fresh)toast(`ようこそ、${me.name}さん`);else if(totalDM())toast(`未読が ${totalDM()} 件あります`,'info')}
+/* ===== init ===== */
+document.body.insertAdjacentHTML('beforeend',`<div id="auth" class="hide"></div><div id="shell" class="hide"><nav id="rail" aria-label="サーバー"></nav><aside id="side" aria-label="サイドバー"></aside><main id="main"></main><aside id="panel" class="hide" aria-label="詳細"></aside><div id="drawerscrim" class="hide" data-act="drawer"></div><nav id="tabbar" aria-label="メインナビゲーション"></nav></div>`);
+applyAS();boot();
+const _nav=A.nav;A.nav=el=>{if(el.dataset.n==="rooms")RM.q="";_nav(el)};
+matchMedia('(prefers-color-scheme:light)').addEventListener?.('change',()=>{});
+const sid0=SS.getItem('wc.sess');if(sid0&&db.users[sid0]&&!db.users[sid0].suspended)startSession(sid0,false);else showAuth(Object.values(db.users).some(u=>!u.bot)?'login':'register');
+</script>
+
+</body></html>
